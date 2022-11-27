@@ -45,7 +45,7 @@ public class AgentMain {
 		AgentMain.args = args;
 		
         SpringApplicationBuilder builder = new SpringApplicationBuilder(AgentMain.class);
-        builder.headless(false); 
+        builder.headless(false);
         context = builder.run(args);
 		 
 		System.out.println("@@@ Started!!!");
