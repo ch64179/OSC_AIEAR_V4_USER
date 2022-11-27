@@ -1,5 +1,7 @@
 package com.aiear.user;
 
+import io.swagger.annotations.ApiOperation;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
@@ -9,11 +11,14 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import lombok.RequiredArgsConstructor;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,10 +27,6 @@ import com.aiear.dao.CommonDAO;
 import com.aiear.dao.UserMngDAO;
 import com.aiear.vo.ResponseVO;
 import com.aiear.vo.UserInfoVO;
-import com.aiear.vo.UserInfoVO;
-
-import io.swagger.annotations.ApiOperation;
-import lombok.RequiredArgsConstructor;
 
 
 @RestController
@@ -67,7 +68,7 @@ public class UserMngCont {
 	public @ResponseBody List<Map<String, Object>> getUserList(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			UserInfoVO userInfoVO) {
+			@RequestBody UserInfoVO userInfoVO) {
 		
 		logger.info("■■■■■■ getUserList / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		List<Map<String, Object>> userList = userDAO.getUserListInfo(userInfoVO);
@@ -84,7 +85,7 @@ public class UserMngCont {
 	public @ResponseBody Map<String, Object> getUserDetail(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			UserInfoVO userInfoVO) {
+			@RequestBody UserInfoVO userInfoVO) {
 	
 		logger.info("■■■■■■ getUserDetail / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		Map<String, Object> userInfo = new HashMap<String, Object>();
@@ -115,7 +116,7 @@ public class UserMngCont {
 	public @ResponseBody List<Map<String, Object>> getUserRelationList(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			UserInfoVO userInfoVO) {
+			@RequestBody UserInfoVO userInfoVO) {
 		
 		logger.info("■■■■■■ getUserRelationList / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		
@@ -133,7 +134,7 @@ public class UserMngCont {
 	public @ResponseBody ResponseVO getUserCodeDupChk(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			UserInfoVO userInfoVO) {
+			@RequestBody UserInfoVO userInfoVO) {
 		
 		logger.info("■■■■■■ getUserCodeDupChk / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		
@@ -167,7 +168,7 @@ public class UserMngCont {
 	public @ResponseBody ResponseVO updateUserDetail(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			UserInfoVO userInfoVO) {
+			@RequestBody UserInfoVO userInfoVO) {
 		
 		logger.info("■■■■■■ updateUserDetail / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 	
@@ -212,7 +213,7 @@ public class UserMngCont {
 	public @ResponseBody ResponseVO insertUserFamilyMapp(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			UserInfoVO userInfoVO) {
+			@RequestBody UserInfoVO userInfoVO) {
 		
 		logger.info("■■■■■■ insertUserFamilyMapp / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		
@@ -250,7 +251,7 @@ public class UserMngCont {
 	public @ResponseBody ResponseVO updateUserFamilyMapp(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			UserInfoVO userInfoVO) {
+			@RequestBody UserInfoVO userInfoVO) {
 		
 		logger.info("■■■■■■ updateUserFamilyMapp / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		
@@ -283,7 +284,7 @@ public class UserMngCont {
 	public @ResponseBody ResponseVO deleteUserAction(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			UserInfoVO userInfoVO) {
+			@RequestBody UserInfoVO userInfoVO) {
 		
 		logger.info("■■■■■■ deleteUserAction / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		

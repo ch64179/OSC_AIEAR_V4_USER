@@ -19,7 +19,7 @@ public interface CommonDAO {
 	* @date        : 2022.11.18
 	* @return
 	*/
-	public Boolean isAlive();
+	public String isAlive();
 	
 	
 	/**

@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -66,7 +67,7 @@ public class HospitalMngCont {
 	public @ResponseBody List<Map<String, Object>> getHospitalList(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			HospitalInfoVO hsptInfoVO) {
+			@RequestBody HospitalInfoVO hsptInfoVO) {
 		
 		logger.info("■■■■■■ getHospitalList / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		List<Map<String, Object>> hsptList = hsptDAO.getHospitalList(hsptInfoVO);
@@ -87,7 +88,7 @@ public class HospitalMngCont {
 	public @ResponseBody ResponseVO insertHospitalInfo(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			HospitalInfoVO hsptInfoVO) {
+			@RequestBody HospitalInfoVO hsptInfoVO) {
 		
 		logger.info("■■■■■■ insertHospitalInfo / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		
@@ -128,7 +129,7 @@ public class HospitalMngCont {
 	public @ResponseBody Map<String, Object> getHospitalDetail(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			HospitalInfoVO hsptInfoVO) {
+			@RequestBody HospitalInfoVO hsptInfoVO) {
 
 		logger.info("■■■■■■ getHospitalDetail / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		Map<String, Object> hsptInfo = new HashMap<String, Object>();
@@ -159,7 +160,7 @@ public class HospitalMngCont {
 	public @ResponseBody List<Map<String, Object>> getHospitalClinicList(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			HospitalInfoVO hsptInfoVO) {
+			@RequestBody HospitalInfoVO hsptInfoVO) {
 		
 		logger.info("■■■■■■ getHospitalClinicList / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		List<Map<String, Object>> hsptList = hsptDAO.getHospitalClinicList(hsptInfoVO);
@@ -190,7 +191,7 @@ public class HospitalMngCont {
 	public @ResponseBody ResponseVO insertHospitalClinic(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			HospitalInfoVO hsptInfoVO) {
+			@RequestBody HospitalInfoVO hsptInfoVO) {
 		
 		logger.info("■■■■■■ insertHospitalClinic / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		
@@ -242,7 +243,7 @@ public class HospitalMngCont {
 	public @ResponseBody ResponseVO updateHospitalClinic(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			HospitalInfoVO hsptInfoVO) {
+			@RequestBody HospitalInfoVO hsptInfoVO) {
 		
 		logger.info("■■■■■■ updateHospitalClinic / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		
@@ -283,7 +284,7 @@ public class HospitalMngCont {
 	public @ResponseBody ResponseVO updateHospitalInfo(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			HospitalInfoVO hsptInfoVO) {
+			@RequestBody HospitalInfoVO hsptInfoVO) {
 		
 		logger.info("■■■■■■ updateHospitalInfo / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		

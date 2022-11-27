@@ -1,17 +1,12 @@
 package com.aiear.web.rest;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aiear.AgentMain;
@@ -22,23 +17,18 @@ import com.aiear.dao.CommonDAO;
 public class MainRestCont {
 	
 	protected final Logger logger = LogManager.getLogger(getClass());
-	
+		
 	@Autowired
 	private CommonDAO commonDAO;
 	
 	
 	@RequestMapping("/isAlive")
 	public String isAlive() {
-		boolean chk = commonDAO.isAlive();
+		String chk = commonDAO.isAlive();
 		
-		if(chk) {
-			chk = commonDAO.isAlive();
-		}
-		if(chk) {
-			//todo more
-		}
+		chk = chk != null || !"".equals(chk) ? "success" : "fail";
 		
-		return chk ? "success" : "fail";
+		return chk;
 	}
 	
 	/**

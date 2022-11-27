@@ -5,8 +5,8 @@
 <mapper namespace="com.aiear.dao.CommonDAO">
 
 	<!-- 헬스 체크 -->
-	<select id="isAlive" resultType="Boolean">
-		SELECT now() as alive
+	<select id="isAlive" resultType="String">
+		SELECT now() AS alive
 	</select>
 
 	<!-- 공통 코드 조회 -->
