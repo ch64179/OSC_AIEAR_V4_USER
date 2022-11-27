@@ -48,7 +48,7 @@ public class AgentMain {
         builder.headless(false);
         context = builder.run(args);
 		
-		System.out.println("@@@ Started!!!"); 
+		System.out.println("@@@ Started!!!");
 	}
 
 	
