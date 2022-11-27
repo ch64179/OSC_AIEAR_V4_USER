@@ -9,6 +9,8 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import lombok.Data;
 
 @Data
@@ -20,10 +22,10 @@ public class SMSVO {
 	)
 	
 	@ApiParam(value = "API 키")
-	private String api_key = "NCSZBI23UIO0CCCV";
+	private String api_key;
 	
 	@ApiParam(value = "API 비밀번호")
-	private String api_secret = "9QKDIYLUJCTGYHASOSENQBHS266CEY0P";
+	private String api_secret;
 	
 	@ApiParam(value = "송신 모바일 번호")
 	private String to_mobile_no;

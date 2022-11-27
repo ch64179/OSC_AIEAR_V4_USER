@@ -3,6 +3,7 @@ package com.aiear.web.rest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.http.ResponseEntity;
@@ -25,9 +26,7 @@ public class MainRestCont {
 	@RequestMapping("/isAlive")
 	public String isAlive() {
 		String chk = commonDAO.isAlive();
-		
 		chk = chk != null || !"".equals(chk) ? "success" : "fail";
-		
 		return chk;
 	}
 	

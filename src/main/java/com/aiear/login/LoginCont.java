@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,6 +52,15 @@ public class LoginCont {
 	
 	@Autowired
 	private HospitalMngDAO hsptDAO;
+	
+	@Value("${coolsms.to.mobile.no}")
+	String COOL_SMS_MOBILE_NO;
+	
+	@Value("${coolsms.api.key}")
+	String COOL_SMS_API_KEY;
+	
+	@Value("${coolsms.api.secret}")
+	String COOL_SMS_API_SECRET;
 	
 	
 	@ApiOperation(value = "로그인"
@@ -177,12 +187,14 @@ public class LoginCont {
 			SMSVO smsVO = new SMSVO();
 			smsVO.setFrom_mobile_no(srchIdInfo.get("mobile_tel_no").toString());
 			smsVO.setSend_msg(msg);
+			smsVO.setTo_mobile_no(COOL_SMS_MOBILE_NO);
+			smsVO.setApi_key(COOL_SMS_API_KEY);
+			smsVO.setApi_secret(COOL_SMS_API_SECRET);
 			
 			SMSVO smsRsltVO = SMSUtil.sendSMS(smsVO);
 			logger.info("■■■■■■ smsRsltVO : {}", smsRsltVO.toString());
 			
 			smsDAO.insertSMSSendHst(smsRsltVO);
-			
 			
 			resVO.setData(srchIdInfo);
 			resVO.setMessage("아이디 찾기 성공");
@@ -238,6 +250,9 @@ public class LoginCont {
 			SMSVO smsVO = new SMSVO();
 			smsVO.setFrom_mobile_no(srchIdInfo.get("mobile_tel_no").toString());
 			smsVO.setSend_msg(msg);
+			smsVO.setTo_mobile_no(COOL_SMS_MOBILE_NO);
+			smsVO.setApi_key(COOL_SMS_API_KEY);
+			smsVO.setApi_secret(COOL_SMS_API_SECRET);
 			
 			SMSVO smsRsltVO = SMSUtil.sendSMS(smsVO);
 			logger.info("■■■■■■ smsRsltVO : {}", smsRsltVO.toString());
