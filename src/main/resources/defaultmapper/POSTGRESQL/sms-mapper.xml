@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace 명은 dao 와 일치하게 작성하면 됨 -->
+<mapper namespace="com.aiear.dao.SMSDAO">
+
+	<insert id="insertSMSSendHst" parameterType="SMSVO">
+		INSERT INTO t_sms_send_hst (
+			api_key,
+			api_secret,
+			to_mobile_no,
+			from_mobile_no,
+			send_type,
+			send_msg,
+			app_version,
+			sms_rslt,
+			gen_by,
+			gen_dt
+		) VALUES (
+			#{api_key},
+			#{api_secret},
+			#{to_mobile_no},
+			#{from_mobile_no},
+			#{send_type},
+			#{send_msg},
+			#{app_version},
+			#{sms_rslt},
+			'admin',
+			now()
+		)
+	</insert>
+
+</mapper>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "HTTP://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <settings>
+		<setting name="cacheEnabled" value="false" />
+		<setting name="useGeneratedKeys" value="true" />
+		<setting name="defaultExecutorType" value="REUSE" />
+    </settings>
+    
+	<typeAliases>
+		<typeAlias alias="hmap" type="java.util.HashMap" />
+		<typeAlias alias="list" type="java.util.List" />
+		
+		<!-- 로그인 VO -->
+		<typeAlias alias="loginVO" type="com.aiear.vo.LoginVO" />
+		
+		<!-- 사용자 VO -->
+		<typeAlias alias="userInfoVO" type="com.aiear.vo.UserInfoVO" />
+		
+		<!-- 병원 VO -->
+		<typeAlias alias="hospitalInfoVO" type="com.aiear.vo.HospitalInfoVO" />
+		
+		<!-- SMS VO -->
+		<typeAlias alias="smsVO" type="com.aiear.vo.SMSVO" />
+		
+		<!-- 공통코드 VO -->
+		<typeAlias alias="commonCdVO" type="com.aiear.vo.CommonCdVO" />
+		
+		
+		<typeAlias alias="sysPolicyVO" type="com.aiear.vo.SysPolicyVO" />
+		<typeAlias alias="rawDataVO" type="com.aiear.vo.RawDataVO" />
+		<typeAlias alias="statVO" type="com.aiear.vo.StatVO" />
+	</typeAliases>
+	
+    <typeHandlers>
+        <typeHandler handler="org.apache.ibatis.type.SqlDateTypeHandler" javaType="java.sql.Date" jdbcType="DATE"/>
+    </typeHandlers>
+
+<!-- @Configuration 클래스 에서 자동인식으로 설정 -->    
+<!--     <mappers> -->
+<!--     	<mapper resource="mapper/example-mapper.xml"/> -->
+<!--     </mappers> -->
+
+</configuration>

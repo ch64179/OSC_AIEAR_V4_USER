@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace 명은 dao 와 일치하게 작성하면 됨 -->
+<mapper namespace="com.aiear.dao.CommonDAO">
+
+	<!-- 헬스 체크 -->
+	<select id="isAlive" resultType="Boolean">
+		SELECT now() as alive
+	</select>
+
+	<!-- 공통 코드 조회 -->
+	<select id="getCommonCodeList" parameterType="commonCdVO" resultType="commonCdVO">
+		SELECT cat_cd
+			 , cd
+			 , cd_val
+			 , cd_desc
+			 , cd_attr_1
+			 , cd_attr_2
+			 , cd_attr_3
+		  FROM t_cm_cd
+		 WHERE cat_cd = #{cat_cd}
+		<if test='cd != null and !"".equals(cd)'>
+		   AND cd = #{cd}
+		</if>
+		   AND use_yn = 'Y'
+	  ORDER BY disp_ord
+	</select>
+
+</mapper>
