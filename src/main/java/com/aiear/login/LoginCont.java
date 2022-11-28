@@ -2,8 +2,11 @@ package com.aiear.login;
 
 import io.swagger.annotations.ApiOperation;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -21,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.aiear.config.session.JwtManager;
+import com.aiear.config.session.Member;
 import com.aiear.dao.CommonDAO;
 import com.aiear.dao.HospitalMngDAO;
 import com.aiear.dao.LoginDAO;
@@ -80,6 +85,7 @@ public class LoginCont {
 		
 		ResponseVO resVO = new ResponseVO();
 		HttpSession session = req.getSession();
+		JwtManager jwtManager = new JwtManager();
 		
 		//Session에 있을 경우 자동 로그인
 		if(session.getAttribute("login_id") != null && session.getAttribute("user_type") != null){
@@ -92,6 +98,7 @@ public class LoginCont {
 			resVO.setResult(false);
 			return resVO;
 		}
+		
 		if(loginVO.getUser_pwd() == null || "".equals(loginVO.getUser_pwd())){
 			resVO.setMessage("비밀번호를 입력해 주세요.");
 			resVO.setResult(false);
@@ -116,6 +123,29 @@ public class LoginCont {
 			session.setAttribute("user_id", pwdChk.get("user_id"));
 			session.setAttribute("user_pwd", pwdChk.get("user_pwd"));
 			session.setAttribute("user_type", pwdChk.get("user_type"));
+			
+			Member member = new Member();
+			
+			member.setUser_nm(pwdChk.get("user_nm").toString());
+			member.setUser_id(pwdChk.get("user_id").toString());
+			member.setUser_type(pwdChk.get("user_type").toString());
+			
+			String token = jwtManager.generateJwtToken(member);
+			String usernameFromToken = jwtManager.getUsernameFromToken(token);
+			
+			try {
+				Map<String, Object> checkJwtMap = jwtManager.checkJwt(token);
+				logger.info("checkJwtMap : {}", checkJwtMap);
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
+			res.setHeader("Authorization", "Bearer " + token);
+		
+			logger.info("MEMBER TOKEN : {}", token);
+			logger.info("USER NAME FROM TOKEN : {}", usernameFromToken);
 			
 			resVO.setMessage(pwdChk.get("user_type") + " 로그인 성공했습니다.");
 			resVO.setData(pwdChk);

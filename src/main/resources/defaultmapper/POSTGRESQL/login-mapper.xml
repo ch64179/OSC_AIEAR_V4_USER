@@ -7,9 +7,11 @@
 	<!-- 로그인 (ID 체크) -->
 	<select id="normalLoginIdProcess" parameterType="userInfoVO" resultType="hmap">
 		SELECT t1.user_id
+			 , t1.user_nm
 			 , t1.user_pwd
 			 , t1.user_type
 		  FROM (SELECT user_id
+		  			 , user_nm
 					 , user_pwd
 					 , user_type
 				  FROM t_user_info
@@ -17,6 +19,7 @@
 				   AND user_type = 'ADMIN'
 				 UNION ALL
 				SELECT hospital_id AS user_id
+					 , hospital_nm AS user_nm
 					 , hospital_pwd AS user_pwd
 					 , 'HOSPITAL' AS user_type
 				  FROM t_hospital_info) AS t1
@@ -27,9 +30,11 @@
 	<!-- 로그인 (PWD 체크) -->
 	<select id="normalLoginPwdProcess" parameterType="userInfoVO" resultType="hmap">
 		SELECT t1.user_id
+			 , t1.user_nm
 			 , t1.user_pwd
 			 , t1.user_type
 		  FROM (SELECT user_id
+		  			 , user_nm
 					 , user_pwd
 					 , user_type
 				  FROM t_user_info
@@ -37,6 +42,7 @@
 				   AND user_type = 'ADMIN'
 				 UNION ALL
 				SELECT hospital_id AS user_id
+					 , hospital_nm AS user_nm
 					 , hospital_pwd AS user_pwd
 					 , 'HOSPITAL' AS user_type
 				  FROM t_hospital_info) AS t1
