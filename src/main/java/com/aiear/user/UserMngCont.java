@@ -17,11 +17,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.aiear.dao.CommonDAO;
 import com.aiear.dao.UserMngDAO;
@@ -64,7 +68,7 @@ public class UserMngCont {
 						+ "\n 6. page_cnt"
 						+ "<br>  - 페이지 선택"
 				)
-	@PostMapping(value = "getUserList.do")
+	@GetMapping(value = "getUserList.do")
 	public @ResponseBody List<Map<String, Object>> getUserList(
 			HttpServletRequest req,
 			HttpServletResponse res,
@@ -78,14 +82,12 @@ public class UserMngCont {
 	
 	
 	@ApiOperation(value = "유저 상세 정보 조회"
-				, notes = "유저 상세 정보 조회"
-						+ "\n 1. user_code"
-						+ "<br> 	- 필수값")
-	@PostMapping(value = "getUserDetail/{user_code}.do")
+				, notes = "유저 상세 정보 조회")
+	@GetMapping(value = "getUserDetail/{user_code}.do")
 	public @ResponseBody Map<String, Object> getUserDetail(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			@RequestBody UserInfoVO userInfoVO) {
+			UserInfoVO userInfoVO) {
 	
 		logger.info("■■■■■■ getUserDetail / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		Map<String, Object> userInfo = new HashMap<String, Object>();
@@ -109,14 +111,12 @@ public class UserMngCont {
 	
 	
 	@ApiOperation(value = "유저 가족관계 정보 조회"
-				, notes = "유저 가족관계 정보 조회"
-						+ "\n 1. user_code"
-						+ "<br> 	- 필수값")
-	@PostMapping(value = "getUserRelationList/{user_code}.do")
+				, notes = "유저 가족관계 정보 조회")
+	@GetMapping(value = "getUserRelationList/{user_code}.do")
 	public @ResponseBody List<Map<String, Object>> getUserRelationList(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			@RequestBody UserInfoVO userInfoVO) {
+			UserInfoVO userInfoVO) {
 		
 		logger.info("■■■■■■ getUserRelationList / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		
@@ -130,7 +130,7 @@ public class UserMngCont {
 				, notes = "유저 코드 중복체크"
 						+ "\n 1. user_code"
 						+ "<br> 	- 필수값")
-	@PostMapping(value = "getUserCodeDupChk.do")
+	@GetMapping(value = "getUserCodeDupChk.do")
 	public @ResponseBody ResponseVO getUserCodeDupChk(
 			HttpServletRequest req,
 			HttpServletResponse res,
@@ -168,7 +168,8 @@ public class UserMngCont {
 	public @ResponseBody ResponseVO updateUserDetail(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			@RequestBody UserInfoVO userInfoVO) {
+			@RequestParam(value = "img_file", required = false) MultipartFile img_file,
+			UserInfoVO userInfoVO) {
 		
 		logger.info("■■■■■■ updateUserDetail / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 	
@@ -177,10 +178,10 @@ public class UserMngCont {
 		int cnt = -1;
 		
 		try {
-			byte[] img_file;
-			if(userInfoVO.getImg_file() != null || "".equals(userInfoVO.getImg_file())) {
-				img_file = userInfoVO.getImg_file().getBytes();
-				userInfoVO.setImg_file_byte(img_file);
+			byte[] b_img_file;
+			if(img_file != null || "".equals(img_file)) {
+				b_img_file = img_file.getBytes();
+				userInfoVO.setImg_file_byte(b_img_file);
 			}
 			
 			cnt = userDAO.updateUserDetail(userInfoVO);
@@ -203,18 +204,18 @@ public class UserMngCont {
 	
 	@ApiOperation(value = "유저 가족관계 신규등록"
 			, notes = "유저 가족관계 신규등록"
-					+ "\n 1. user_code"
-					+ "<br> 	- (필수)"
-					+ "\n 2. family_user_code"
+					+ "\n 1. family_user_code"
 					+ "<br>		- (필수)"
-					+ "\n 3. famill_relation"
+					+ "\n 2. family_relation"
 					+ "<br>		- (선택)")
 	@PostMapping(value = "insertUserFamilyMapp/{user_code}.do")
 	public @ResponseBody ResponseVO insertUserFamilyMapp(
 			HttpServletRequest req,
 			HttpServletResponse res,
+			@PathVariable String user_code,
 			@RequestBody UserInfoVO userInfoVO) {
 		
+		userInfoVO.setUser_code(user_code);
 		logger.info("■■■■■■ insertUserFamilyMapp / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		
 		ResponseVO rsltVO = new ResponseVO();
@@ -241,18 +242,18 @@ public class UserMngCont {
 				, notes = "유저 가족관계 수정"
 						+ "\n 1. family_seq"
 						+ "<br> 	- (필수)"
-						+ "\n 2. user_code"
+						+ "\n 2. family_user_code"
 						+ "<br>		- (선택)"
-						+ "\n 3. family_user_code"
-						+ "<br>		- (선택)"
-						+ "\n 4. famill_relation"
+						+ "\n 3. family_relation"
 						+ "<br>		- (선택)")
 	@PostMapping(value = "updateUserFamilyMapp/{user_code}.do")
 	public @ResponseBody ResponseVO updateUserFamilyMapp(
 			HttpServletRequest req,
 			HttpServletResponse res,
+			@PathVariable String user_code,
 			@RequestBody UserInfoVO userInfoVO) {
-		
+
+		userInfoVO.setUser_code(user_code);
 		logger.info("■■■■■■ updateUserFamilyMapp / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		
 		ResponseVO rsltVO = new ResponseVO();
@@ -277,14 +278,12 @@ public class UserMngCont {
 	
 	
 	@ApiOperation(value = "유저 탈퇴 처리"
-				, notes = "유저 탈퇴 처리"
-						+ "\n 1. user_code"
-						+ "<br> 	- 필수값")
+				, notes = "유저 탈퇴 처리")
 	@PostMapping(value = "deleteUserAction/{user_code}.do")
 	public @ResponseBody ResponseVO deleteUserAction(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			@RequestBody UserInfoVO userInfoVO) {
+			UserInfoVO userInfoVO) {
 		
 		logger.info("■■■■■■ deleteUserAction / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		

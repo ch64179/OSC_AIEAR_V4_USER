@@ -1,16 +1,17 @@
 package com.aiear.vo;
 
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.annotations.ApiParam;
+
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
-import org.springframework.web.multipart.MultipartFile;
-
-import io.swagger.annotations.ApiModelProperty;
-import io.swagger.annotations.ApiParam;
 import lombok.Data;
+
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class UserInfoVO {

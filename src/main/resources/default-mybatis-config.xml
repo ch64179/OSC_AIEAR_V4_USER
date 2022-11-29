@@ -26,7 +26,6 @@
 		<!-- 공통코드 VO -->
 		<typeAlias alias="commonCdVO" type="com.aiear.vo.CommonCdVO" />
 		
-		
 		<typeAlias alias="sysPolicyVO" type="com.aiear.vo.SysPolicyVO" />
 		<typeAlias alias="rawDataVO" type="com.aiear.vo.RawDataVO" />
 		<typeAlias alias="statVO" type="com.aiear.vo.StatVO" />

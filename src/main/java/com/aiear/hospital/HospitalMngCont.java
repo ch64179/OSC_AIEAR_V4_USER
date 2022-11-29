@@ -16,11 +16,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.aiear.dao.CommonDAO;
 import com.aiear.dao.HospitalMngDAO;
@@ -43,8 +46,8 @@ public class HospitalMngCont {
 	private CommonDAO commonDAO;
 	
 	
-	@ApiOperation(value = "유저 정보 리스트 조회"
-				, notes = "유저 정보 리스트 조회"
+	@ApiOperation(value = "병원 정보 리스트 조회"
+				, notes = "병원 정보 리스트 조회"
 						+ "<br> ** > hospital_nm, hospital_id 없을 시 전체조회**"
 						+ "<br> ** > order_type, oder_type2 2개다 있어야지 정렬**"
 						+ "<br> ** > raw_cnt, page_cnt 2개다 있어야지 Paginatoin 가능**"
@@ -63,7 +66,7 @@ public class HospitalMngCont {
 						+ "\n 6. page_cnt"
 						+ "<br>  - 페이지 선택"
 				)
-	@PostMapping(value = "getHospitalList.do")
+	@GetMapping(value = "getHospitalList.do")
 	public @ResponseBody List<Map<String, Object>> getHospitalList(
 			HttpServletRequest req,
 			HttpServletResponse res,
@@ -76,8 +79,8 @@ public class HospitalMngCont {
 	}
 	
 	
-	@ApiOperation(value = "병원 상세 정보 조회"
-			, notes = "병원 상세 정보 조회"
+	@ApiOperation(value = "병원 등록"
+			, notes = "병원 등록"
 					+ "\n 1. hospital_id"
 					+ "<br> 	- 필수값"
 					+ "\n 2. hospital_nm"
@@ -125,11 +128,11 @@ public class HospitalMngCont {
 			, notes = "병원 상세 정보 조회"
 					+ "\n 1. hospital_id"
 					+ "<br> 	- 필수값")
-	@PostMapping(value = "getHospitalDetail/{hospital_id}.do")
+	@GetMapping(value = "getHospitalDetail/{hospital_id}.do")
 	public @ResponseBody Map<String, Object> getHospitalDetail(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			@RequestBody HospitalInfoVO hsptInfoVO) {
+			HospitalInfoVO hsptInfoVO) {
 
 		logger.info("■■■■■■ getHospitalDetail / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		Map<String, Object> hsptInfo = new HashMap<String, Object>();
@@ -156,11 +159,11 @@ public class HospitalMngCont {
 			, notes = "병원 진료시간 조회"
 					+ "\n 1. hospital_id"
 					+ "<br> 	- 필수값")
-	@PostMapping(value = "getHospitalClinicList/{hospital_id}.do")
+	@GetMapping(value = "getHospitalClinicList/{hospital_id}.do")
 	public @ResponseBody List<Map<String, Object>> getHospitalClinicList(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			@RequestBody HospitalInfoVO hsptInfoVO) {
+			HospitalInfoVO hsptInfoVO) {
 		
 		logger.info("■■■■■■ getHospitalClinicList / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		List<Map<String, Object>> hsptList = hsptDAO.getHospitalClinicList(hsptInfoVO);
@@ -284,7 +287,8 @@ public class HospitalMngCont {
 	public @ResponseBody ResponseVO updateHospitalInfo(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			@RequestBody HospitalInfoVO hsptInfoVO) {
+			@RequestParam(value = "img_file", required = false) MultipartFile img_file, 
+			HospitalInfoVO hsptInfoVO) {
 		
 		logger.info("■■■■■■ updateHospitalInfo / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		
@@ -293,10 +297,10 @@ public class HospitalMngCont {
 		int cnt = -1;
 		
 		try {
-			byte[] img_file;
-			if(hsptInfoVO.getImg_file() != null || "".equals(hsptInfoVO.getImg_file())) {
-				img_file = hsptInfoVO.getImg_file().getBytes();
-				hsptInfoVO.setImg_file_byte(img_file);
+			byte[] b_img_file;
+			if(img_file != null || "".equals(img_file)) {
+				b_img_file = img_file.getBytes();
+				hsptInfoVO.setImg_file_byte(b_img_file);
 			}
 			
 			cnt = hsptDAO.updateHospitalInfo(hsptInfoVO);

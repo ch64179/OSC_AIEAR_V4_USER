@@ -2,11 +2,8 @@ package com.aiear.login;
 
 import io.swagger.annotations.ApiOperation;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -15,17 +12,21 @@ import lombok.RequiredArgsConstructor;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.aiear.config.session.JwtManager;
-import com.aiear.config.session.Member;
+import com.aiear.config.session.AuthRequest;
+import com.aiear.config.session.AuthenticateUtil;
+import com.aiear.config.session.JwtUtil;
+//import com.aiear.config.session.JwtManager;
+//import com.aiear.config.session.Member;
 import com.aiear.dao.CommonDAO;
 import com.aiear.dao.HospitalMngDAO;
 import com.aiear.dao.LoginDAO;
@@ -58,6 +59,13 @@ public class LoginCont {
 	@Autowired
 	private HospitalMngDAO hsptDAO;
 	
+	@Autowired
+    private JwtUtil jwtUtil;
+	 
+    @Autowired
+    private AuthenticationManager authenticationManager;
+	
+	
 	@Value("${coolsms.to.mobile.no}")
 	String COOL_SMS_MOBILE_NO;
 	
@@ -85,7 +93,7 @@ public class LoginCont {
 		
 		ResponseVO resVO = new ResponseVO();
 		HttpSession session = req.getSession();
-		JwtManager jwtManager = new JwtManager();
+//		JwtManager jwtManager = new JwtManager();
 		
 		//Session에 있을 경우 자동 로그인
 		if(session.getAttribute("login_id") != null && session.getAttribute("user_type") != null){
@@ -119,33 +127,17 @@ public class LoginCont {
 			resVO.setMessage("비밀번호가 일치하지 않습니다.");
 			resVO.setResult(false);
 		} else {
-			//로그인 성공시 Session Setting
-			session.setAttribute("user_id", pwdChk.get("user_id"));
-			session.setAttribute("user_pwd", pwdChk.get("user_pwd"));
-			session.setAttribute("user_type", pwdChk.get("user_type"));
-			
-			Member member = new Member();
-			
-			member.setUser_nm(pwdChk.get("user_nm").toString());
-			member.setUser_id(pwdChk.get("user_id").toString());
-			member.setUser_type(pwdChk.get("user_type").toString());
-			
-			String token = jwtManager.generateJwtToken(member);
-			String usernameFromToken = jwtManager.getUsernameFromToken(token);
 			
 			try {
-				Map<String, Object> checkJwtMap = jwtManager.checkJwt(token);
-				logger.info("checkJwtMap : {}", checkJwtMap);
-			} catch (UnsupportedEncodingException e) {
+				AuthRequest authRequest = new AuthRequest();
+				authRequest.setHospitalId(loginVO.getUser_id());
+				authRequest.setHospitalPwd(loginVO.getUser_pwd());
+				String authToken = generateTokenStr(authRequest);
+				res.setHeader("Authorization", "Bearer " + authToken);
+			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
-			
-			res.setHeader("Authorization", "Bearer " + token);
-		
-			logger.info("MEMBER TOKEN : {}", token);
-			logger.info("USER NAME FROM TOKEN : {}", usernameFromToken);
 			
 			resVO.setMessage(pwdChk.get("user_type") + " 로그인 성공했습니다.");
 			resVO.setData(pwdChk);
@@ -154,6 +146,26 @@ public class LoginCont {
 		
 		return resVO;
 	}
+	
+	
+	@ApiOperation(value = "토큰 발급"
+			, notes = "토큰 발급"
+					+ "\n 1. hospitalId"
+					+ "<br> 	- 필수값"
+					+ "\n 1. hospitalPwd"
+					+ "<br> 	- 필수값"
+			)
+	@PostMapping("/authenticate")
+	public String generateToken(@RequestBody AuthRequest authRequest) throws Exception {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequest.getHospitalId(), authRequest.getHospitalPwd())
+            );
+        } catch (Exception ex) {
+            throw new Exception("inavalid username/password");
+        }
+        return jwtUtil.generateToken(authRequest.getHospitalId());
+    }
 	
 	
 	@ApiOperation(value = "로그아웃"
@@ -310,5 +322,16 @@ public class LoginCont {
 		return resVO;
 	}
 
+	
+	public String generateTokenStr(AuthRequest authRequest) throws Exception {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequest.getHospitalId(), authRequest.getHospitalPwd())
+            );
+        } catch (Exception ex) {
+            throw new Exception("inavalid username/password");
+        }
+        return jwtUtil.generateToken(authRequest.getHospitalId());
+    }
 	
 }

@@ -53,11 +53,11 @@ public class DefaultDataSourceConfig {
 		return new SqlSessionTemplate(defaultSqlSessionFactory);
 	}
 
-	@Bean(name="txManager")
-	public PlatformTransactionManager  transactionManager() {
-        DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(defaultDatasource());
-        transactionManager.setGlobalRollbackOnParticipationFailure(false);
-        return transactionManager;
-    }
+//	@Bean(name="txManager")
+//	public PlatformTransactionManager  transactionManager() {
+//        DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(defaultDatasource());
+//        transactionManager.setGlobalRollbackOnParticipationFailure(false);
+//        return transactionManager;
+//    }
     
 }

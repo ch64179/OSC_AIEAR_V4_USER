@@ -1,13 +1,12 @@
-/**
- * 
- */
 package com.aiear.config.session;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @packageName : com.aiear.config.session
- * @fileName	: Member.java
+ * @fileName	: AuthRequest.java
  * @author		: pcw
  * @date		: 2022. 11. 28.
  * @description	:
@@ -16,8 +15,10 @@ import lombok.Data;
  * 2022. 11. 28.		pcw				최초 생성
  */
 @Data
-public class Member {
-	private String user_nm;
-	private String user_id;
-	private String user_type;
+@AllArgsConstructor
+@NoArgsConstructor
+public class AuthRequest {
+
+    private String hospitalId;
+    private String hospitalPwd;
 }
