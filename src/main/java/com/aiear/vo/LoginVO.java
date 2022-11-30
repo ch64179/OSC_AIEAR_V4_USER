@@ -37,6 +37,9 @@ public class LoginVO {
 	@ApiParam(value = "임시 비밀번호")
 	private String temp_pwd;
 	
+	@ApiParam(value = "Refresh Token")
+	private String refresh_token;
+	
 	public HashMap<String, Object> beanToHmap(LoginVO vo) {
 		HashMap<String, Object> beanAsMap = new HashMap<String, Object>();
 		

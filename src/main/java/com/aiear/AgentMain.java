@@ -45,7 +45,7 @@ public class AgentMain {
 //    public TaskScheduler taskScheduler() {
 //    	ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
 //    	taskScheduler.setPoolSize(10);
-//    	return taskScheduler;
+//    	return taskScheduler;t
 //    }
 	
     /**

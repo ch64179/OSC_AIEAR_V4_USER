@@ -183,7 +183,9 @@
 				  , kakao_yn
 				  , naver_yn
 				  , user_addr
-				  , user_img)
+				  , user_img
+				  , last_login
+				  , refresh_token)
 			(SELECT user_id
 				  , user_nm
 				  , user_pwd
@@ -203,6 +205,8 @@
 				  , naver_yn
 				  , user_addr
 				  , user_img
+				  , last_login
+				  , refresh_token
 			   FROM t_user_info
 			  WHERE user_code = #{user_code})
 	</insert>

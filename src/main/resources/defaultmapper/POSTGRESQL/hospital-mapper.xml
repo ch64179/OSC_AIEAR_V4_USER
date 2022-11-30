@@ -131,7 +131,9 @@
 			gen_dt,
 			mdfy_by,
 			mdfy_dt,
-			new_yn)
+			new_yn,
+			last_login,
+			refresh_token)
 		(SELECT hospital_nm,
 				hospital_id,
 				hospital_pwd,
@@ -147,7 +149,9 @@
 				gen_dt,
 				mdfy_by,
 				mdfy_dt,
-				new_yn
+				new_yn,
+				last_login,
+				refresh_token
 		   FROM t_hospital_info
 		  WHERE hospital_id = #{hospital_id})
 	</insert>

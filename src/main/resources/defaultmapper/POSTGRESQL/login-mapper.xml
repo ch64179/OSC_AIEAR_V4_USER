@@ -87,5 +87,13 @@
 		 WHERE mgr_tel_no = #{mobile_tel_no}
 		   AND hospital_id = #{user_id}
 	</update>
+	
+	
+	<update id="updateLoginInfo" parameterType="userInfoVO">
+		UPDATE t_hospital_info
+		   SET last_login = now()
+		     , refresh_token = #{refresh_token}
+		 WHERE hospital_id = #{user_id}
+	</update>
 
 </mapper>

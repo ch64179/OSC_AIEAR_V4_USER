@@ -56,4 +56,15 @@ public interface LoginDAO {
 	public int updateHsptTempPwd(LoginVO vo);
 	
 	
+	/**
+	 * Description	: 
+	 * @method		: updateLoginInfo
+	 * @author		: pcw
+	 * @date		: 2022. 11. 30.
+	 * @param vo
+	 * @return
+	 */
+	public int updateLoginInfo(LoginVO vo);
+	
+	
 }

@@ -43,6 +43,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private static final String[] PERMIT_URL_ARRAY = {
     	/* 관리자 Login */
     	"/login/**",
+        "/rest/**",
         /* swagger v2 */
         "/v2/api-docs",
         "/swagger-resources",

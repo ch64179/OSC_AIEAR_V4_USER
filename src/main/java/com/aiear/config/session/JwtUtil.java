@@ -55,12 +55,46 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, hospitalId);
     }
+    
+    public String generateRefreshToken(String hospitalId) {
+        Map<String, Object> claims = new HashMap<>();
+        return createRefreshToken(claims, hospitalId);
+    }
 
     private String createToken(Map<String, Object> claims, String subject) {
-
+    	
+//    	//Access Token
+//        String accessToken = Jwts.builder()
+//                .setClaims(claims) // 정보 저장
+//                .setIssuedAt(new Date(System.currentTimeMillis())) // 토큰 발행 시간 정보
+//                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 10)) // set Expire Time
+//                .signWith(SignatureAlgorithm.HS256, secret)  // 사용할 암호화 알고리즘과
+//                // signature 에 들어갈 secret값 세팅
+//                .compact();
+//
+//        //Refresh Token
+//        String refreshToken =  Jwts.builder()
+//                .setClaims(claims) // 정보 저장
+//                .setIssuedAt(new Date(System.currentTimeMillis())) // 토큰 발행 시간 정보
+//                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 10)) // set Expire Time
+//                .signWith(SignatureAlgorithm.HS256, secret)  // 사용할 암호화 알고리즘과
+//                // signature 에 들어갈 secret값 세팅
+//                .compact();
+    	
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 10))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 3))
                 .signWith(SignatureAlgorithm.HS256, secret).compact();
+    }
+    
+    private String createRefreshToken(Map<String, Object> claims, String subject) {
+      //Refresh Token
+      return Jwts.builder()
+              .setClaims(claims) // 정보 저장
+              .setIssuedAt(new Date(System.currentTimeMillis())) // 토큰 발행 시간 정보
+              .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7)) // set Expire Time
+              .signWith(SignatureAlgorithm.HS256, secret)  // 사용할 암호화 알고리즘과
+              // signature 에 들어갈 secret값 세팅
+              .compact();
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {

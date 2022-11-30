@@ -66,7 +66,7 @@ public class LoginCont {
     private AuthenticationManager authenticationManager;
 	
 	
-	@Value("${coolsms.to.mobile.no}")
+	@Value("${coolsms.from.mobile.no}")
 	String COOL_SMS_MOBILE_NO;
 	
 	@Value("${coolsms.api.key}")
@@ -127,17 +127,26 @@ public class LoginCont {
 			resVO.setMessage("비밀번호가 일치하지 않습니다.");
 			resVO.setResult(false);
 		} else {
+			String authToken = null;
+			String refreshToken = null;
 			
 			try {
 				AuthRequest authRequest = new AuthRequest();
 				authRequest.setHospitalId(loginVO.getUser_id());
 				authRequest.setHospitalPwd(loginVO.getUser_pwd());
-				String authToken = generateTokenStr(authRequest);
-				res.setHeader("Authorization", "Bearer " + authToken);
+				authToken = generateTokenStr(authRequest);
+				refreshToken = generateRefreshTokenStr(authRequest);
+				
+				pwdChk.put("accessToken", authToken);
+				pwdChk.put("refreshToken", refreshToken);
+				
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			
+			loginVO.setRefresh_token(refreshToken);
+			loginDAO.updateLoginInfo(loginVO);
 			
 			resVO.setMessage(pwdChk.get("user_type") + " 로그인 성공했습니다.");
 			resVO.setData(pwdChk);
@@ -165,6 +174,26 @@ public class LoginCont {
             throw new Exception("inavalid username/password");
         }
         return jwtUtil.generateToken(authRequest.getHospitalId());
+    }
+	
+	
+	@ApiOperation(value = "Refresh 토큰 발급"
+			, notes = "Refresh 토큰 발급"
+					+ "\n 1. hospitalId"
+					+ "<br> 	- 필수값"
+					+ "\n 1. hospitalPwd"
+					+ "<br> 	- 필수값"
+			)
+	@PostMapping("/authenticateR")
+	public String generateRefreshToken(@RequestBody AuthRequest authRequest) throws Exception {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequest.getHospitalId(), authRequest.getHospitalPwd())
+            );
+        } catch (Exception ex) {
+            throw new Exception("inavalid username/password");
+        }
+        return jwtUtil.generateRefreshToken(authRequest.getHospitalId());
     }
 	
 	
@@ -227,9 +256,9 @@ public class LoginCont {
 			String msg = "[AIEAR 계정 찾기] 귀하의 번호로 가입되어 있는 계정 : " + srchIdInfo.get("user_id").toString();
 
 			SMSVO smsVO = new SMSVO();
-			smsVO.setFrom_mobile_no(srchIdInfo.get("mobile_tel_no").toString());
+			smsVO.setTo_mobile_no(srchIdInfo.get("mobile_tel_no").toString());
 			smsVO.setSend_msg(msg);
-			smsVO.setTo_mobile_no(COOL_SMS_MOBILE_NO);
+			smsVO.setFrom_mobile_no(COOL_SMS_MOBILE_NO);
 			smsVO.setApi_key(COOL_SMS_API_KEY);
 			smsVO.setApi_secret(COOL_SMS_API_SECRET);
 			
@@ -332,6 +361,18 @@ public class LoginCont {
             throw new Exception("inavalid username/password");
         }
         return jwtUtil.generateToken(authRequest.getHospitalId());
+    }
+	
+	
+	public String generateRefreshTokenStr(AuthRequest authRequest) throws Exception {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequest.getHospitalId(), authRequest.getHospitalPwd())
+            );
+        } catch (Exception ex) {
+            throw new Exception("inavalid username/password");
+        }
+        return jwtUtil.generateRefreshToken(authRequest.getHospitalId());
     }
 	
 }
