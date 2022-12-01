@@ -104,12 +104,14 @@ public class LoginCont {
 		if(loginVO.getUser_id() == null || "".equals(loginVO.getUser_id())){
 			resVO.setMessage("아이디를 입력해 주세요.");
 			resVO.setResult(false);
+			resVO.setStatus(400);
 			return resVO;
 		}
 		
 		if(loginVO.getUser_pwd() == null || "".equals(loginVO.getUser_pwd())){
 			resVO.setMessage("비밀번호를 입력해 주세요.");
 			resVO.setResult(false);
+			resVO.setStatus(400);
 			return resVO;
 		}
 		
@@ -118,6 +120,7 @@ public class LoginCont {
 		if(idChk == null) {
 			resVO.setMessage(loginVO.getUser_id() + " / 일치하는 계정이 없습니다.");
 			resVO.setResult(false);
+			resVO.setStatus(400);
 			return resVO;
 		}
 		
@@ -126,6 +129,7 @@ public class LoginCont {
 		if(pwdChk == null){
 			resVO.setMessage("비밀번호가 일치하지 않습니다.");
 			resVO.setResult(false);
+			resVO.setStatus(400);
 		} else {
 			String authToken = null;
 			String refreshToken = null;
@@ -140,15 +144,18 @@ public class LoginCont {
 				pwdChk.put("accessToken", authToken);
 				pwdChk.put("refreshToken", refreshToken);
 				
+				resVO.setMessage(pwdChk.get("user_type") + " 로그인 성공했습니다.");
+				
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				resVO.setStatus(400);
+				resVO.setMessage(pwdChk.get("user_type") + " 일치하는 계정이 없습니다, 토큰 생성에 실패했습니다.");
 			}
 			
 			loginVO.setRefresh_token(refreshToken);
 			loginDAO.updateLoginInfo(loginVO);
 			
-			resVO.setMessage(pwdChk.get("user_type") + " 로그인 성공했습니다.");
 			resVO.setData(pwdChk);
 			resVO.setResult(true);
 		}
@@ -211,11 +218,6 @@ public class LoginCont {
 		logger.info("■■■■■■ normalLogout / loginVO : {}", loginVO.beanToHmap(loginVO).toString());
 		
 		ResponseVO resVO = new ResponseVO();
-		HttpSession session = req.getSession();
-		
-		session.removeAttribute("user_id");
-		session.removeAttribute("user_pwd");
-		session.removeAttribute("user_type");
 		
 		resVO.setResult(true);
 		
@@ -238,40 +240,46 @@ public class LoginCont {
 		
 		ResponseVO resVO = new ResponseVO();
 		
-		if(loginVO.getMobile_tel_no() == null || "".equals(loginVO.getMobile_tel_no().toString())){
-			resVO.setMessage("전화번호를 입력해 주세요");
-			resVO.setResult(false);
-			return resVO;
+		try {
+			if(loginVO.getMobile_tel_no() == null || "".equals(loginVO.getMobile_tel_no().toString())){
+				resVO.setMessage("전화번호를 입력해 주세요");
+				resVO.setResult(false);
+				resVO.setStatus(400);
+				return resVO;
+			}
+			
+			Map<String, Object> srchIdInfo = loginDAO.searchIdPwdInfo(loginVO);
+			
+			if(srchIdInfo == null){
+				resVO.setMessage(loginVO.getUser_id() + " / 일치하는 계정이 없습니다.");
+				resVO.setResult(false);
+				resVO.setStatus(400);
+			} else { 
+				
+				//TODO. COOLSMS API 전송 로직 추가
+				//	1. SMS 전송 및 이력 적재 (임시로 COOLSMS 테스트 계정으로 진행)
+				String msg = "[AIEAR 계정 찾기] 귀하의 번호로 가입되어 있는 계정 : " + srchIdInfo.get("user_id").toString();
+	
+				SMSVO smsVO = new SMSVO();
+				smsVO.setTo_mobile_no(srchIdInfo.get("mobile_tel_no").toString());
+				smsVO.setSend_msg(msg);
+				smsVO.setFrom_mobile_no(COOL_SMS_MOBILE_NO);
+				smsVO.setApi_key(COOL_SMS_API_KEY);
+				smsVO.setApi_secret(COOL_SMS_API_SECRET);
+				
+				SMSVO smsRsltVO = SMSUtil.sendSMS(smsVO);
+				logger.info("■■■■■■ smsRsltVO : {}", smsRsltVO.toString());
+				
+				smsDAO.insertSMSSendHst(smsRsltVO);
+				
+				resVO.setData(srchIdInfo);
+				resVO.setMessage("아이디 찾기 성공");
+				resVO.setResult(true);
+			}
+		} catch (Exception e) {
+			// TODO: handle exception
+			resVO.setStatus(400);
 		}
-		
-		Map<String, Object> srchIdInfo = loginDAO.searchIdPwdInfo(loginVO);
-		
-		if(srchIdInfo == null){
-			resVO.setMessage(loginVO.getUser_id() + " / 일치하는 계정이 없습니다.");
-			resVO.setResult(false);
-		} else { 
-			
-			//TODO. COOLSMS API 전송 로직 추가
-			//	1. SMS 전송 및 이력 적재 (임시로 COOLSMS 테스트 계정으로 진행)
-			String msg = "[AIEAR 계정 찾기] 귀하의 번호로 가입되어 있는 계정 : " + srchIdInfo.get("user_id").toString();
-
-			SMSVO smsVO = new SMSVO();
-			smsVO.setTo_mobile_no(srchIdInfo.get("mobile_tel_no").toString());
-			smsVO.setSend_msg(msg);
-			smsVO.setFrom_mobile_no(COOL_SMS_MOBILE_NO);
-			smsVO.setApi_key(COOL_SMS_API_KEY);
-			smsVO.setApi_secret(COOL_SMS_API_SECRET);
-			
-			SMSVO smsRsltVO = SMSUtil.sendSMS(smsVO);
-			logger.info("■■■■■■ smsRsltVO : {}", smsRsltVO.toString());
-			
-			smsDAO.insertSMSSendHst(smsRsltVO);
-			
-			resVO.setData(srchIdInfo);
-			resVO.setMessage("아이디 찾기 성공");
-			resVO.setResult(true);
-		}
-		
 		return resVO;
 	}
 	
@@ -293,59 +301,70 @@ public class LoginCont {
 		
 		ResponseVO resVO = new ResponseVO();
 		
-		if(loginVO.getUser_id() == null || "".equals(loginVO.getUser_id())){
-			resVO.setMessage("아이디를 입력해 주세요.");
-			resVO.setResult(false);
-			return resVO;
-		}
-		if(loginVO.getMobile_tel_no() == null || "".equals(loginVO.getMobile_tel_no().toString())){
-			resVO.setMessage("전화번호를 입력해 주세요");
-			resVO.setResult(false);
-			return resVO;
-		}
-		
-		Map<String, Object> srchIdInfo = loginDAO.searchIdPwdInfo(loginVO);
-		
-		if(srchIdInfo == null){
-			resVO.setMessage(loginVO.getMobile_tel_no() + " / 일치하는 계정이 없습니다.");
-			resVO.setResult(false);
-		} else {
-			//TODO. COOLSMS API 전송 로직 추가
-			//	1. 임시 비밀번호 생성 테스트
-			String rndPwd = LoginUtil.getRamdomPassword(10);
-			srchIdInfo.put("rnd_pwd", rndPwd);
+		try {
 			
-			//	2. SMS 전송 및 이력 적재 (임시로 COOLSMS 테스트 계정으로 진행)
-			String msg = "[비밀번호 변경] 임시 비밀번호 생성 완료 : " + rndPwd;
-			
-			SMSVO smsVO = new SMSVO();
-			smsVO.setFrom_mobile_no(srchIdInfo.get("mobile_tel_no").toString());
-			smsVO.setSend_msg(msg);
-			smsVO.setTo_mobile_no(COOL_SMS_MOBILE_NO);
-			smsVO.setApi_key(COOL_SMS_API_KEY);
-			smsVO.setApi_secret(COOL_SMS_API_SECRET);
-			
-			SMSVO smsRsltVO = SMSUtil.sendSMS(smsVO);
-			logger.info("■■■■■■ smsRsltVO : {}", smsRsltVO.toString());
-			
-			smsDAO.insertSMSSendHst(smsRsltVO);
-			
-			//	3. 임시 비밀번호로 업데이트
-			loginVO.setTemp_pwd(rndPwd);
-			Integer rslt = loginDAO.updateHsptTempPwd(loginVO);
-			
-			if(rslt > 0){
-				HospitalInfoVO hVO = new HospitalInfoVO();
-				hVO.setHospital_id(loginVO.getUser_id());
-				hsptDAO.insertHospitalHst(hVO);
-				
-				resVO.setData(srchIdInfo);
-				resVO.setMessage("임시 비밀번호 발급 성공");
-				resVO.setResult(true);
-			} else {
-				resVO.setMessage("임시 비밀번호 저장 실패");
+			if(loginVO.getUser_id() == null || "".equals(loginVO.getUser_id())){
+				resVO.setMessage("아이디를 입력해 주세요.");
 				resVO.setResult(false);
+				resVO.setStatus(400);
+				return resVO;
 			}
+			if(loginVO.getMobile_tel_no() == null || "".equals(loginVO.getMobile_tel_no().toString())){
+				resVO.setMessage("전화번호를 입력해 주세요");
+				resVO.setResult(false);
+				resVO.setStatus(400);
+				return resVO;
+			}
+			
+			Map<String, Object> srchIdInfo = loginDAO.searchIdPwdInfo(loginVO);
+			
+			if(srchIdInfo == null){
+				resVO.setMessage(loginVO.getMobile_tel_no() + " / 일치하는 계정이 없습니다.");
+				resVO.setResult(false);
+				resVO.setStatus(400);
+			} else {
+				//TODO. COOLSMS API 전송 로직 추가
+				//	1. 임시 비밀번호 생성 테스트
+				String rndPwd = LoginUtil.getRamdomPassword(10);
+				srchIdInfo.put("rnd_pwd", rndPwd);
+				
+				//	2. SMS 전송 및 이력 적재 (임시로 COOLSMS 테스트 계정으로 진행)
+				String msg = "[비밀번호 변경] 임시 비밀번호 생성 완료 : " + rndPwd;
+				
+				SMSVO smsVO = new SMSVO();
+				smsVO.setFrom_mobile_no(srchIdInfo.get("mobile_tel_no").toString());
+				smsVO.setSend_msg(msg);
+				smsVO.setTo_mobile_no(COOL_SMS_MOBILE_NO);
+				smsVO.setApi_key(COOL_SMS_API_KEY);
+				smsVO.setApi_secret(COOL_SMS_API_SECRET);
+				
+				SMSVO smsRsltVO = SMSUtil.sendSMS(smsVO);
+				logger.info("■■■■■■ smsRsltVO : {}", smsRsltVO.toString());
+				
+				smsDAO.insertSMSSendHst(smsRsltVO);
+				
+				//	3. 임시 비밀번호로 업데이트
+				loginVO.setTemp_pwd(rndPwd);
+				Integer rslt = loginDAO.updateHsptTempPwd(loginVO);
+				
+				if(rslt > 0){
+					HospitalInfoVO hVO = new HospitalInfoVO();
+					hVO.setHospital_id(loginVO.getUser_id());
+					hsptDAO.insertHospitalHst(hVO);
+					
+					resVO.setData(srchIdInfo);
+					resVO.setMessage("임시 비밀번호 발급 성공");
+					resVO.setResult(true);
+				} else {
+					resVO.setMessage("임시 비밀번호 저장 실패");
+					resVO.setResult(false);
+					resVO.setStatus(400);
+				}
+			}
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+			resVO.setStatus(400);
 		}
 		
 		return resVO;

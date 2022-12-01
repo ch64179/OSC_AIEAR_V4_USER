@@ -16,6 +16,7 @@
 			 , t1.hospital_img
 			 , t1.hospital_desc
 			 , t1.pwd_mdfy_dt
+			 , t1.use_yn
 			 , t2.cd_val AS use_yn_nm
 			 , t1.gen_by
 			 , t1.gen_dt
@@ -64,6 +65,7 @@
 			 , t1.hospital_img
 			 , t1.hospital_desc
 			 , t1.pwd_mdfy_dt
+			 , t1.use_yn
 			 , t2.cd_val AS use_yn_nm
 			 , t1.gen_by
 			 , t1.gen_dt
