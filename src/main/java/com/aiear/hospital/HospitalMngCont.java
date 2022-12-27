@@ -3,6 +3,7 @@ package com.aiear.hospital;
 import io.swagger.annotations.ApiOperation;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,79 +49,56 @@ public class HospitalMngCont {
 	
 	@ApiOperation(value = "병원 정보 리스트 조회"
 				, notes = "병원 정보 리스트 조회"
-						+ "<br> ** > hospital_nm, hospital_id 없을 시 전체조회**"
 						+ "<br> ** > order_type, oder_type2 2개다 있어야지 정렬**"
 						+ "<br> ** > raw_cnt, page_cnt 2개다 있어야지 Paginatoin 가능**"
-						+ "\n 1. hospital_nm"
+						+ "\n 1. hospital_addr"
 						+ "<br> 	- LIKE 검색"
-						+ "\n 2. hospital_id"
-						+ "<br> 	- LIKE 검색"
-						+ "\n 3. order_type"
+						+ "\n 2. order_type"
 						+ "<br> 	- Default : 가입일(GEN_DT)"
 						+ " - 활동 상태(USE_YN), 병원 이름(HOSPITAL_NM), 병원 ID(HOSPITAL_ID), 생성일(GEN_DT)"
-						+ "\n 4. order_type2"
+						+ "\n 3. order_type2"
 						+ "<br> 	- Default : 내림차순(DESC)"
 						+ "<br>  - 오름차순(ASC), 내림차순(DESC)"
-						+ "\n 5. raw_cnt"
+						+ "\n 4. raw_cnt"
 						+ "<br> 	- 페이지별 로우데이터 갯수"
-						+ "\n 6. page_cnt"
+						+ "\n 5. page_cnt"
 						+ "<br>  - 페이지 선택"
+						+ "\n"
+						+ "\n hospital_flag : RUN(진료 중), REST(휴계 중), IDLE(휴무일)"
 				)
 	@GetMapping(value = "getHospitalList.do")
-	public @ResponseBody List<Map<String, Object>> getHospitalList(
+	public @ResponseBody Map<String, Object> getHospitalList(
 			HttpServletRequest req,
 			HttpServletResponse res,
 			@RequestBody HospitalInfoVO hsptInfoVO) {
 		
 		logger.info("■■■■■■ getHospitalList / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
-		List<Map<String, Object>> hsptList = hsptDAO.getHospitalList(hsptInfoVO);
-		
-		return hsptList;
-	}
-	
-	
-	@ApiOperation(value = "병원 등록"
-			, notes = "병원 등록"
-					+ "\n 1. hospital_id"
-					+ "<br> 	- 필수값"
-					+ "\n 2. hospital_nm"
-					+ "<br>		- 필수값"
-					+ "\n 3. hospital_pwd"
-					+ "<br>		- 필수값")
-	@PostMapping(value = "insertHospitalInfo/{hospital_id}.do")
-	public @ResponseBody ResponseVO insertHospitalInfo(
-			HttpServletRequest req,
-			HttpServletResponse res,
-			@RequestBody HospitalInfoVO hsptInfoVO) {
-		
-		logger.info("■■■■■■ insertHospitalInfo / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
-		
-		ResponseVO rsltVO = new ResponseVO();
-		Map<String, Object> rslt = new HashMap<String, Object>();
-		int cnt = -1;
+		List<Map<String, Object>> rsltList = new ArrayList<Map<String,Object>>();
+		Map<String, Object> list = new HashMap<String, Object>();
 		
 		try {
-			int dupCnt = hsptDAO.getHospitalDupChk(hsptInfoVO);
-			if(dupCnt > 0) {
-				rslt.put("cnt", cnt);
-				rslt.put("msg", "FAIL / Duplication ID");
-			} else {
-				cnt = hsptDAO.insertHospitalInfo(hsptInfoVO);
-				cnt = cnt > 0 ? hsptDAO.insertHospitalHst(hsptInfoVO) : cnt; 
+			List<Map<String, Object>> hsptList = hsptDAO.getHospitalList(hsptInfoVO);
+			
+			for(Map<String, Object> hsptInfo : hsptList){
+				byte[] bArr = (byte[]) hsptInfo.get("hospital_img");
+				byte[] base64 = Base64.encodeBase64(bArr);
 				
-				rslt.put("cnt", cnt);
-				rslt.put("msg", "SUCCESS");
+				if(base64 != null){
+					hsptInfo.put("hospital_img_str", (new String(base64, "UTF-8")));
+				}
+				
+				rsltList.add(hsptInfo);
 			}
-		
-		} catch (Exception e) {
-			// TODO: handle exception
-			rslt.put("msg", e.getMessage());
-			rslt.put("cnt", cnt);
+			
+			list.put("data", rsltList);
+			list.put("size", rsltList.size());
+			
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
-		rsltVO.setData(rslt);
-		
-		return rsltVO;
+		return list;
 	}
 	
 	
@@ -160,7 +138,7 @@ public class HospitalMngCont {
 					+ "\n 1. hospital_id"
 					+ "<br> 	- 필수값")
 	@GetMapping(value = "getHospitalClinicList/{hospital_id}.do")
-	public @ResponseBody List<Map<String, Object>> getHospitalClinicList(
+	public @ResponseBody Map<String, Object> getHospitalClinicList(
 			HttpServletRequest req,
 			HttpServletResponse res,
 			HospitalInfoVO hsptInfoVO) {
@@ -168,156 +146,11 @@ public class HospitalMngCont {
 		logger.info("■■■■■■ getHospitalClinicList / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		List<Map<String, Object>> hsptList = hsptDAO.getHospitalClinicList(hsptInfoVO);
 		
-		return hsptList;
+		Map<String, Object> list = new HashMap<String, Object>();
+		
+		list.put("data", hsptList);
+		list.put("size", hsptList.size());
+		
+		return list;
 	}
-	
-	
-	@ApiOperation(value = "병원 진료시간 신규등록"
-			, notes = "병원 진료시간 신규등록"
-					+ "\n 1. hospital_id"
-					+ "<br> 	- 필수값"
-					+ "\n 2. day_of_week"
-					+ "<br>		- 필수값 : MON, TUE, WED, THR, FRI, SAT, SUN"
-					+ "\n 3. clinic_yn"
-					+ "<br>		- 선택값 : Y, N"
-					+ "\n 4. lunch_yn"
-					+ "<br>		- 선택값 : Y, N"
-					+ "\n 5. c_strt_tm"
-					+ "<br>		- 진료 시작 시간"
-					+ "\n 6. c_end_tm"
-					+ "<br>		- 진료 종료 시간"
-					+ "\n 7. l_strt_tm"
-					+ "<br>		- 점심 시작 시간"
-					+ "\n 8. l_end_tm"
-					+ "<br>		- 점심 종료 시간")
-	@PostMapping(value = "insertHospitalClinic/{hospital_id}.do")
-	public @ResponseBody ResponseVO insertHospitalClinic(
-			HttpServletRequest req,
-			HttpServletResponse res,
-			@RequestBody HospitalInfoVO hsptInfoVO) {
-		
-		logger.info("■■■■■■ insertHospitalClinic / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
-		
-		ResponseVO rsltVO = new ResponseVO();
-		Map<String, Object> rslt = new HashMap<String, Object>();
-		int cnt = -1;
-		
-		try {
-			int dupCnt = hsptDAO.insertHospitalDupChk(hsptInfoVO);
-			if(dupCnt > 0) {
-				rslt.put("cnt", cnt);
-				rslt.put("msg", "FAIL / Duplication Hospital Clinic Mapp");
-			} else {
-				cnt = hsptDAO.insertHospitalClinic(hsptInfoVO);
-				rslt.put("cnt", cnt);
-				rslt.put("msg", "SUCCESS");
-			}
-		} catch (Exception e) {
-			// TODO: handle exception
-			rslt.put("msg", e.getMessage());
-			rslt.put("cnt", cnt);
-		}
-		
-		rsltVO.setData(rslt);
-		
-		return rsltVO;
-	}
-	
-	
-	@ApiOperation(value = "병원 진료시간 수정"
-			, notes = "병원 진료시간 수정"
-					+ "\n 1. hospital_id"
-					+ "<br> 	- 필수값"
-					+ "\n 2. day_of_week"
-					+ "<br>		- 필수값 : MON, TUE, WED, THR, FRI, SAT, SUN"
-					+ "\n 3. clinic_yn"
-					+ "<br>		- 선택값 : Y, N"
-					+ "\n 4. lunch_yn"
-					+ "<br>		- 선택값 : Y, N"
-					+ "\n 5. c_strt_tm"
-					+ "<br>		- 진료 시작 시간"
-					+ "\n 6. c_end_tm"
-					+ "<br>		- 진료 종료 시간"
-					+ "\n 7. l_strt_tm"
-					+ "<br>		- 점심 시작 시간"
-					+ "\n 8. l_end_tm"
-					+ "<br>		- 점심 종료 시간")
-	@PostMapping(value = "updateHospitalClinic/{hospital_id}.do")
-	public @ResponseBody ResponseVO updateHospitalClinic(
-			HttpServletRequest req,
-			HttpServletResponse res,
-			@RequestBody HospitalInfoVO hsptInfoVO) {
-		
-		logger.info("■■■■■■ updateHospitalClinic / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
-		
-		ResponseVO rsltVO = new ResponseVO();
-		Map<String, Object> rslt = new HashMap<String, Object>();
-		int cnt = -1;
-		
-		try {
-			int dupCnt = hsptDAO.insertHospitalDupChk(hsptInfoVO);
-			if(dupCnt > 0) {
-				cnt = hsptDAO.updateHospitalClinic(hsptInfoVO);
-				rslt.put("cnt", cnt);
-				rslt.put("msg", "SUCCESS");
-			} else {
-				rslt.put("cnt", cnt);
-				rslt.put("msg", "FAIL / No Data Hospital Clinic Mapp");
-			}
-		} catch (Exception e) {
-			// TODO: handle exception
-			rslt.put("msg", e.getMessage());
-			rslt.put("cnt", cnt);
-		}
-		
-		rsltVO.setData(rslt);
-		
-		return rsltVO;
-	}
-	
-	
-
-	@ApiOperation(value = "병원 상세 정보 수정"
-			, notes = "병원 상세 정보 수정"
-					+ "\n 1. hospital_id"
-					+ "<br> 	- 필수값"
-					+ "\n 2. hospital_pwd"
-					+ "<br>		- 선택값")
-	@PostMapping(value = "updateHospitalInfo/{hospital_id}.do")
-	public @ResponseBody ResponseVO updateHospitalInfo(
-			HttpServletRequest req,
-			HttpServletResponse res,
-			@RequestParam(value = "img_file", required = false) MultipartFile img_file, 
-			HospitalInfoVO hsptInfoVO) {
-		
-		logger.info("■■■■■■ updateHospitalInfo / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
-		
-		ResponseVO rsltVO = new ResponseVO();
-		Map<String, Object> rslt = new HashMap<String, Object>();
-		int cnt = -1;
-		
-		try {
-			byte[] b_img_file;
-			if(img_file != null || "".equals(img_file)) {
-				b_img_file = img_file.getBytes();
-				hsptInfoVO.setImg_file_byte(b_img_file);
-			}
-			
-			cnt = hsptDAO.updateHospitalInfo(hsptInfoVO);
-			cnt = cnt > 0 ? hsptDAO.insertHospitalHst(hsptInfoVO) : cnt; 
-			
-			rslt.put("cnt", cnt);
-			rslt.put("msg", "SUCCESS");
-		} catch (Exception e) {
-			// TODO: handle exception
-			rslt.put("msg", e.getMessage());
-			rslt.put("cnt", cnt);
-		}
-		
-		rsltVO.setData(rslt);
-		
-		return rsltVO;
-	}
-	
-	
 }

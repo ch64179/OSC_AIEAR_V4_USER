@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AuthRequest {
 
-    private String hospitalId;
-    private String hospitalPwd;
+    private String userId;
+    private String userPwd;
+    private String userType;
 }

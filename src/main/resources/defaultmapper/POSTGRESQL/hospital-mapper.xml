@@ -6,24 +6,34 @@
 
 	<!-- 병원 정보 리스트 조회 -->
 	<select id="getHospitalList" parameterType="hospitalInfoVO" resultType="hmap">
+		<![CDATA[
 		SELECT t1.hospital_nm
 			 , t1.hospital_id
-			 , t1.hospital_pwd
-			 , t1.hospital_type
-			 , t1.hospital_tel_no
-			 , t1.mgr_tel_no
-			 , t1.hospital_addr
 			 , t1.hospital_img
-			 , t1.hospital_desc
-			 , t1.pwd_mdfy_dt
-			 , t1.use_yn
-			 , t2.cd_val AS use_yn_nm
-			 , t1.gen_by
-			 , t1.gen_dt
-			 , t1.mdfy_by
-			 , t1.mdfy_dt
-			 , t1.new_yn
-			 , t3.cd_val AS new_yn_nm
+			 , t1.hospital_addr
+			 , t4.cd AS dow
+			 , t5.c_strt_tm
+			 , t5.c_end_tm
+			 , CASE WHEN t5.c_strt_tm != '' and t5.c_end_tm IS NOT NULL
+			 		THEN CASE WHEN CURRENT_TIME > CONCAT(t5.c_strt_tm, ':00')::timetz and CURRENT_TIME < CONCAT(t5.c_end_tm, ':00')::timetz
+						 	  THEN CASE WHEN CURRENT_TIME > CONCAT(t5.l_strt_tm, ':00')::timetz and CURRENT_TIME < CONCAT(t5.l_end_tm, ':00')::timetz
+							 			THEN 'REST'
+							 			ELSE 'RUN'
+							 			END
+						 	  ELSE 'RUN'
+						 	  END
+					ELSE 'IDLE'
+			 		END AS hospital_flag
+			 , CASE WHEN t5.c_strt_tm != '' and t5.c_end_tm IS NOT NULL
+			 		THEN CASE WHEN CURRENT_TIME > CONCAT(t5.c_strt_tm, ':00')::timetz and CURRENT_TIME < CONCAT(t5.c_end_tm, ':00')::timetz
+						 	  THEN CASE WHEN CURRENT_TIME > CONCAT(t5.l_strt_tm, ':00')::timetz and CURRENT_TIME < CONCAT(t5.l_end_tm, ':00')::timetz
+							 			THEN '휴계 중'
+							 			ELSE '진료 중'
+							 			END
+						 	  ELSE '진료 중'
+						 	  END
+					ELSE '휴무일'
+			 		END AS hospital_flag_nm
 		  FROM t_hospital_info t1
 	INNER JOIN t_cm_cd t2
 			ON t1.use_yn = t2.cd
@@ -31,12 +41,18 @@
 	INNER JOIN t_cm_cd t3
 			ON t1.new_yn = t3.cd
 		   AND t3.cat_cd = 'HOSPITAL_NEW_YN'
+	CROSS JOIN (SELECT a1.cd
+				  FROM t_cm_cd a1
+				 WHERE a1.cat_cd = 'DOW'
+				   AND a1.disp_ord = EXTRACT(ISODOW FROM CAST(now() AS DATE))) t4
+	LEFT OUTER JOIN t_hospital_clinic_mapp t5
+			ON t1.hospital_id = t5.hospital_id
+		   AND t4.cd = t5.day_of_week
 		 WHERE 1=1
-		<if test='hospital_nm != null and !"".equals(hospital_nm)'>
-		   AND t1.hospital_nm ILIKE CONCAT('%', #{hospital_nm}, '%')
-		</if>
-		<if test='hospital_id != null and !"".equals(hospital_id)'>
-		   AND t1.hospital_id ILIKE CONCAT('%', #{hospital_id}, '%')
+		   AND t1.use_yn = 'Y'
+		]]>
+		<if test='hospital_addr != null and !"".equals(hospital_addr)'>
+		   AND t1.hospital_addr ILIKE CONCAT('%', #{hospital_addr}, '%')
 		</if>
 		<choose>
 			<when test='order_type != null and !"".equals(order_type) and order_type2 != null and !"".equals(order_type2)'>
@@ -55,24 +71,25 @@
 	
 	<!-- 병원 정보 상세 조회 -->
 	<select id="getHospitalDetail" parameterType="hospitalInfoVO" resultType="hmap">
+		<![CDATA[
 		SELECT t1.hospital_nm
-			 , t1.hospital_id
-			 , t1.hospital_pwd
 			 , t1.hospital_type
 			 , t1.hospital_tel_no
 			 , t1.mgr_tel_no
 			 , t1.hospital_addr
 			 , t1.hospital_img
-			 , t1.hospital_desc
-			 , t1.pwd_mdfy_dt
-			 , t1.use_yn
-			 , t2.cd_val AS use_yn_nm
-			 , t1.gen_by
-			 , t1.gen_dt
-			 , t1.mdfy_by
-			 , t1.mdfy_dt
-			 , t1.new_yn
-			 , t3.cd_val AS new_yn_nm
+			 , t5.c_strt_tm
+			 , t5.c_end_tm
+			 , CASE WHEN t5.c_strt_tm != '' and t5.c_end_tm IS NOT NULL
+			 		THEN CASE WHEN CURRENT_TIME > CONCAT(t5.c_strt_tm, ':00')::timetz and CURRENT_TIME < CONCAT(t5.c_end_tm, ':00')::timetz
+						 	  THEN CASE WHEN CURRENT_TIME > CONCAT(t5.l_strt_tm, ':00')::timetz and CURRENT_TIME < CONCAT(t5.l_end_tm, ':00')::timetz
+							 			THEN '휴계 중'
+							 			ELSE '진료 중'
+							 			END
+						 	  ELSE '진료 중'
+						 	  END
+					ELSE '휴무일'
+			 		END AS hospital_flag_nm
 		  FROM t_hospital_info t1
 	INNER JOIN t_cm_cd t2
 			ON t1.use_yn = t2.cd
@@ -80,84 +97,19 @@
 	INNER JOIN t_cm_cd t3
 			ON t1.new_yn = t3.cd
 		   AND t3.cat_cd = 'HOSPITAL_NEW_YN'
+	CROSS JOIN (SELECT a1.cd
+				  FROM t_cm_cd a1
+				 WHERE a1.cat_cd = 'DOW'
+				   AND a1.disp_ord = EXTRACT(ISODOW FROM CAST(now() AS DATE))) t4
+	LEFT OUTER JOIN t_hospital_clinic_mapp t5
+			ON t1.hospital_id = t5.hospital_id
+		   AND t4.cd = t5.day_of_week
+		]]>
 		 WHERE 1=1
+		   AND t1.use_yn = 'Y'
 		   AND t1.hospital_id = #{hospital_id}
 	</select>
-	
-	
-	<!-- 병원 ID 중복 체크 -->
-	<select id="getHospitalDupChk" parameterType="hospitalInfoVO" resultType="int">
-		SELECT COUNT(*)
-		  FROM t_hospital_info
-		 WHERE hospital_id = #{hospital_id}
-	</select>
-	
-	
-	<!-- 병원 정보 적재 -->
-	<insert id="insertHospitalInfo" parameterType="hospitalInfoVO">
-		INSERT INTO t_hospital_info (
-			hospital_nm,
-			hospital_id,
-			hospital_pwd,
-			use_yn,
-			gen_by,
-			gen_dt,
-			new_yn
-		) VALUES (
-			#{hospital_nm},
-			#{hospital_id},
-			#{hospital_pwd},
-			'Y'::bpchar,
-			'admin',
-			now(),
-			'Y'::bpchar
-		)
-	</insert>
-	
-	
-	<!-- 병원 정보 이력적재 -->
-	<insert id="insertHospitalHst" parameterType="hospitalInfoVO">
-		INSERT INTO t_hospital_info_hst (
-			hospital_nm,
-			hospital_id,
-			hospital_pwd,
-			hospital_type,
-			hospital_tel_no,
-			mgr_tel_no,
-			hospital_addr,
-			hospital_img,
-			hospital_desc,
-			pwd_mdfy_dt,
-			use_yn,
-			gen_by,
-			gen_dt,
-			mdfy_by,
-			mdfy_dt,
-			new_yn,
-			last_login,
-			refresh_token)
-		(SELECT hospital_nm,
-				hospital_id,
-				hospital_pwd,
-				hospital_type,
-				hospital_tel_no,
-				mgr_tel_no,
-				hospital_addr,
-				hospital_img,
-				hospital_desc,
-				pwd_mdfy_dt,
-				use_yn,
-				gen_by,
-				gen_dt,
-				mdfy_by,
-				mdfy_dt,
-				new_yn,
-				last_login,
-				refresh_token
-		   FROM t_hospital_info
-		  WHERE hospital_id = #{hospital_id})
-	</insert>
-	
+
 	
 	<!-- 병원 진료시간 조회 -->
 	<select id="getHospitalClinicList" parameterType="hospitalInfoVO" resultType="hmap">
@@ -176,154 +128,7 @@
 		   AND t2.cat_cd = 'DOW'
 		 WHERE 1=1
 		   AND hospital_id = #{hospital_id}
+		 ORDER BY t2.disp_ord
 	</select>
-	
-	
-	<select id="insertHospitalDupChk" parameterType="hospitalInfoVO" resultType="int">
-		SELECT COUNT(*)
-		  FROM t_hospital_clinic_mapp
-		 WHERE 1=1
-		   AND hospital_id = #{hospital_id}
-		   AND day_of_week = #{day_of_week}
-	</select>
-	
-	<insert id="insertHospitalClinic" parameterType="hospitalInfoVO">
-		INSERT INTO t_hospital_clinic_mapp (
-			hospital_id
-			, day_of_week
-		<if test='clinic_yn != null and !"".equals(clinic_yn)'>
-			, clinic_yn
-		</if>
-		<if test='c_strt_tm != null and !"".equals(c_strt_tm)'>
-			, c_strt_tm
-		</if>
-		<if test='c_end_tm != null and !"".equals(c_end_tm)'>
-			, c_end_tm
-		</if>
-		<if test='lunch_yn != null and !"".equals(lunch_yn)'>
-			, lunch_yn
-		</if>
-		<if test='l_strt_tm != null and !"".equals(l_strt_tm)'>
-			, l_strt_tm
-		</if>
-		<if test='l_end_tm != null and !"".equals(l_end_tm)'>
-			, l_end_tm
-		</if>
-		) VALUES (
-			#{hospital_id}
-			, #{day_of_week}
-		<if test='clinic_yn != null and !"".equals(clinic_yn)'>
-			, #{clinic_yn}
-		</if>
-		<if test='c_strt_tm != null and !"".equals(c_strt_tm)'>
-			, #{c_strt_tm}
-		</if>
-		<if test='c_end_tm != null and !"".equals(c_end_tm)'>
-			, #{c_end_tm}
-		</if>
-		<if test='lunch_yn != null and !"".equals(lunch_yn)'>
-			, #{lunch_yn}
-		</if>
-		<if test='l_strt_tm != null and !"".equals(l_strt_tm)'>
-			, #{l_strt_tm}
-		</if>
-		<if test='l_end_tm != null and !"".equals(l_end_tm)'>
-			, #{l_end_tm}
-		</if>
-		)
-	</insert>
-	
-	
-	<update id="updateHospitalClinic" parameterType="hospitalInfoVO">
-		UPDATE t_hospital_clinic_mapp
-		   SET hospital_id = #{hospital_id}
-			 , day_of_week = #{day_of_week}
-	<choose>
-		<when test='"Y".equals(clinic_yn)'>
-			<if test='clinic_yn != null and !"".equals(clinic_yn)'>
-				 , clinic_yn = #{clinic_yn}
-			</if>
-			<if test='c_strt_tm != null and !"".equals(c_strt_tm)'>
-				 , c_strt_tm = #{c_strt_tm}
-			</if>
-			<if test='c_end_tm != null and !"".equals(c_end_tm)'>
-				 , c_end_tm = #{c_end_tm}
-			</if>
-		</when>
-		<when test='"N".equals(clinic_yn)'>
-			<if test='clinic_yn != null and !"".equals(clinic_yn)'>
-			 , clinic_yn = #{clinic_yn}
-			</if>
-				 , c_strt_tm = null
-				 , c_end_tm = null
-		</when>
-	</choose>	 
-	<choose>
-		<when test='"Y".equals(lunch_yn)'>
-			<if test='lunch_yn != null and !"".equals(lunch_yn)'>
-				 , lunch_yn = #{lunch_yn}
-			</if>
-			<if test='l_strt_tm != null and !"".equals(l_strt_tm)'>
-				 , l_strt_tm = #{l_strt_tm}
-			</if>
-			<if test='l_end_tm != null and !"".equals(l_end_tm)'>
-				 , l_end_tm = #{l_end_tm}
-			</if>
-		</when>
-		<when test='"N".equals(lunch_yn)'>
-			<if test='lunch_yn != null and !"".equals(lunch_yn)'>
-				 , lunch_yn = #{lunch_yn}
-			</if>
-				 , l_strt_tm = #{l_strt_tm}
-				 , l_end_tm = #{l_end_tm}
-		</when>
-	</choose>
-		 WHERE 1=1
-		   AND hospital_id = #{hospital_id}
-		   AND day_of_week = #{day_of_week}
-	</update>
-
-	
-	<update id="updateHospitalInfo" parameterType="hospitalInfoVO">
-		UPDATE t_hospital_info
-		   SET hospital_id = #{hospital_id}
-		<if test='hospital_nm != null and !"".equals(hospital_nm)'>
-		   	 , hospital_nm = #{hospital_nm}
-		</if>
-		<if test='hospital_pwd != null and !"".equals(hospital_pwd)'> 
-			 , hospital_pwd = #{hospital_pwd}
-		</if>
-		<if test='hospital_type != null and !"".equals(hospital_type)'> 
-			 , hospital_type = #{hospital_type}
-		</if>
-		<if test='hospital_tel_no != null and !"".equals(hospital_tel_no)'> 
-			 , hospital_tel_no = #{hospital_tel_no}
-		</if>
-		<if test='mgr_tel_no != null and !"".equals(mgr_tel_no)'> 
-			 , mgr_tel_no = #{mgr_tel_no}
-		</if>
-		<if test='hospital_addr != null and !"".equals(hospital_addr)'> 
-			 , hospital_addr = #{hospital_addr}
-		</if>
-		<if test='img_file_byte != null and !"".equals(img_file_byte)'> 
-			 , hospital_img = #{img_file_byte}
-		</if>
-		<if test='hospital_desc != null and !"".equals(hospital_desc)'> 
-			 , hospital_desc = #{hospital_desc}
-		</if>
-		<if test='hospital_pwd != null and !"".equals(hospital_pwd)'> 
-			 , pwd_mdfy_dt = now()
-		</if>
-		<if test='use_yn != null and !"".equals(use_yn)'>
-			 , use_yn = 'Y'::bpchar
-		</if>
-			 , mdfy_by = 'admin'
-			 , mdfy_dt = now()
-		<if test='new_yn != null and !"".equals(new_yn)'>
-			 , new_yn = #{new_yn}
-		</if>
-		WHERE 1=1
-		  AND hospital_id = #{hospital_id}
-	</update>
 	
 </mapper>

@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Repository;
 
 import com.aiear.vo.LoginVO;
+import com.aiear.vo.UserInfoVO;
 
 @Mapper
 @Repository
@@ -47,13 +48,13 @@ public interface LoginDAO {
 	
 	/**
 	 * Description	: 
-	 * @method		: updateTempPwd
+	 * @method		: updateUserTempPwd
 	 * @author		: pcw
 	 * @date		: 2022. 11. 27.
 	 * @param vo
 	 * @return
 	 */
-	public int updateHsptTempPwd(LoginVO vo);
+	public int updateUserTempPwd(LoginVO vo);
 	
 	
 	/**
@@ -65,6 +66,5 @@ public interface LoginDAO {
 	 * @return
 	 */
 	public int updateLoginInfo(LoginVO vo);
-	
-	
+
 }

@@ -26,20 +26,20 @@ public class AuthenticateUtil {
 	@Autowired
     private static JwtUtil jwtUtil;
 	
-	public static String generateToken(String hospitalId, String hospitalPwd) throws Exception {
+	public static String generateToken(String userId, String userPwd) throws Exception {
 		
 		AuthRequest authRequest = new AuthRequest();
-		authRequest.setHospitalId(hospitalId);
-		authRequest.setHospitalPwd(hospitalPwd);
+		authRequest.setUserId(userId);
+		authRequest.setUserPwd(userPwd);
 		
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authRequest.getHospitalId(), authRequest.getHospitalPwd())
+                    new UsernamePasswordAuthenticationToken(authRequest.getUserId(), authRequest.getUserPwd())
             );
         } catch (Exception ex) {
             throw new Exception("inavalid username/password");
         }
-        return jwtUtil.generateToken(authRequest.getHospitalId());
+        return jwtUtil.generateToken(authRequest.getUserId(), authRequest.getUserPwd(), authRequest.getUserType());
     }
 	
 }

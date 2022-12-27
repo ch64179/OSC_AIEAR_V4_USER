@@ -32,9 +32,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     private UserRepository repository;
 
     @Override
-    public UserDetails loadUserByUsername(String hospitalId) throws UsernameNotFoundException {
-        User user = repository.findByHospitalId(hospitalId);
-        return new org.springframework.security.core.userdetails.User(user.getHospitalId(), user.getHospitalPwd(), new ArrayList<>());
+    public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
+        User user = repository.findByUserId(userId);
+        return new org.springframework.security.core.userdetails.User(user.getUserId(), user.getUserPwd(), new ArrayList<>());
 //        return new org.springframework.security.core.userdetails.User(user.getUserName(), user.getPassword(), new ArrayList<>());
     }
 }

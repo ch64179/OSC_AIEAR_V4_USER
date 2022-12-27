@@ -15,10 +15,11 @@ import javax.persistence.Table;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "t_hospital_info")
+@Table(name = "t_user_info")
 public class User {
     @Id
-    private String hospitalId;
-    private String hospitalNm;
-    private String hospitalPwd;
+    private String userId;
+    private String userNm;
+    private String userPwd;
+    private String userType;
 }

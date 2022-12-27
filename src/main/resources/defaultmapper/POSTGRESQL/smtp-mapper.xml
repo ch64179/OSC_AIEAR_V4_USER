@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace 명은 dao 와 일치하게 작성하면 됨 -->
+<mapper namespace="com.aiear.dao.SMTPDAO">
+
+	<insert id="insertSMTPSendHst" parameterType="SMTPVO">
+		INSERT INTO t_smtp_send_hst (
+			to_email_addr,
+			from_email_addr,
+			smtp_rslt,
+			gen_by,
+			gen_dt
+		) values (
+			#{to_email_addr},
+			#{from_email_addr},
+			#{smtp_rslt},
+			#{to_email_addr},
+			now()
+		)
+	</insert>
+
+</mapper>

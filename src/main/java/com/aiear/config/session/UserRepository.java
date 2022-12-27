@@ -15,5 +15,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * 2022. 11. 28.		pcw				최초 생성
  */
 public interface UserRepository extends JpaRepository<User,Integer> {
-    User findByHospitalId(String hospitalId);
+    User findByUserId(String userId);
 }

@@ -20,8 +20,14 @@
 		<!-- 병원 VO -->
 		<typeAlias alias="hospitalInfoVO" type="com.aiear.vo.HospitalInfoVO" />
 		
+		<!-- 메뉴 VO -->
+		<typeAlias alias="menuVO" type="com.aiear.vo.MenuVO" />
+		
 		<!-- SMS VO -->
 		<typeAlias alias="smsVO" type="com.aiear.vo.SMSVO" />
+		
+		<!-- SMTP VO -->
+		<typeAlias alias="smtpVO" type="com.aiear.vo.SMTPVO" />
 		
 		<!-- 공통코드 VO -->
 		<typeAlias alias="commonCdVO" type="com.aiear.vo.CommonCdVO" />

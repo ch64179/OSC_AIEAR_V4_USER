@@ -14,11 +14,11 @@ import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
 @Data
-public class UserInfoVO extends ResponseVO {
+public class MenuVO extends ResponseVO {
 	
 	@ApiModelProperty(
-			name = "UserInfoVO",
-			example = "UserInfoVO"
+			name = "MenuVO",
+			example = "MenuVO"
 	)
 	
 	@ApiParam(value = "유저명")
@@ -82,7 +82,7 @@ public class UserInfoVO extends ResponseVO {
 	//이미지 삽임 전용
 	private byte[] img_file_byte;
 	
-	public HashMap<String, Object> beanToHmap(UserInfoVO vo) {
+	public HashMap<String, Object> beanToHmap(MenuVO vo) {
 		HashMap<String, Object> beanAsMap = new HashMap<String, Object>();
 		
 		try {

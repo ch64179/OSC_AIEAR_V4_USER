@@ -2,58 +2,44 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <!-- namespace 명은 dao 와 일치하게 작성하면 됨 -->
-<mapper namespace="com.aiear.dao.UserMngDAO">
-
-	<!-- 유저 정보 리스트 조회 -->
-	<select id="getUserListInfo" parameterType="userInfoVO" resultType="hmap">
-		SELECT t1.user_id
-			 , t1.user_nm
-			 , t1.user_pwd
-			 , t1.user_type
-			 , t1.user_email
-			 , t1.mobile_tel_no
-			 , t1.user_desc
-			 , t1.user_position
-			 , t1.pwd_mdfy_dt
-			 , t1.use_yn
-			 , t2.cd_val AS use_yn_nm
-			 , t1.gen_by
-			 , t1.gen_dt
-			 , t1.mdfy_by
-			 , t1.mdfy_dt
+<mapper namespace="com.aiear.dao.MenuDAO">
+	
+	
+	<!-- 유저 프로필 정보 조회 -->
+	<select id="getUserProfileInfo" parameterType="menuVO" resultType="hmap">
+		SELECT t1.user_nm
 			 , t1.user_code
-			 , t1.user_addr
+			 , t1.user_gender
+			 , t1.user_birth
+			 , t1.user_img
 		  FROM t_user_info t1
-	INNER JOIN t_cm_cd t2
-			ON t1.use_yn = t2.cd
-		   AND t2.cat_cd = 'USER_USE_YN'
 		 WHERE 1=1
-		<if test='user_nm != null and !"".equals(user_nm)'>
-		   AND t1.user_nm ILIKE CONCAT('%', #{user_nm}, '%')
-		</if>
-		<if test='user_code != null and !"".equals(user_code)'>
-		   AND t1.user_code ILIKE CONCAT('%', #{user_code}, '%')
-		</if>
-		<choose>
-			<when test='order_type != null and !"".equals(order_type) and order_type2 != null and !"".equals(order_type2)'>
-		 ORDER BY t1.${order_type} ${order_type2}
-			</when>
-			<otherwise>
-		 ORDER BY t1.GEN_DT DESC
-			</otherwise>
-		</choose>
-		<if test='raw_cnt != null and !"".equals(raw_cnt) and page_cnt != null and !"".equals(page_cnt)'>
-		 LIMIT ${raw_cnt}
-		OFFSET (${page_cnt} - 1) * ${raw_cnt};
-		</if>
+		   AND t1.user_code = #{user_code}
 	</select>
 	
-	
+
+	<!-- 가족 관계 정보 조회 -->
+	<select id="getUserFamilyList" parameterType="menuVO" resultType="hmap">
+		SELECT t1.seq AS family_seq
+			 , t2.user_code
+			 , t2.user_nm 
+			 , t1.f_user_code AS family_user_code
+			 , t3.user_nm AS family_user_nm
+			 , t1.f_relation AS family_relation
+		  FROM t_user_family_mapp t1
+	INNER JOIN t_user_info t2
+			ON t1.o_user_code = t2.user_code
+	INNER JOIN t_user_info t3
+			ON t1.f_user_code = t3.user_code
+		 WHERE 1=1
+		   AND t1.o_user_code = #{user_code}
+	</select>
+
+
 	<!-- 유저 상세 정보 조회 -->
-	<select id="getUserDetailInfo" parameterType="userInfoVO" resultType="hmap">
+	<select id="getUserDetailInfo" parameterType="menuVO" resultType="hmap">
 		SELECT t1.user_id
 			 , t1.user_nm
-			 , t1.user_pwd
 			 , t1.user_type
 			 , t1.user_email
 			 , t1.mobile_tel_no
@@ -69,6 +55,8 @@
 			 , t1.user_code
 			 , t1.user_addr
 			 , t1.user_img
+			 , t1.user_gender
+			 , t1.user_birth
 		  FROM t_user_info t1
 	INNER JOIN t_cm_cd t2
 			ON t1.use_yn = t2.cd
@@ -78,14 +66,46 @@
 	</select>
 	
 	
-	<!-- 유저 관계 정보 조회 -->
-	<select id="getUserRelationList" parameterType="userInfoVO" resultType="hmap">
+	<!-- 유저 닉네임 업데이트 -->
+	<update id="updateUserNm" parameterType="menuVO">
+		UPDATE t_user_info
+		   SET mdfy_by = #{user_code}
+			 , mdfy_dt = now()
+			 , user_nm = #{user_nm}
+		 WHERE user_code = #{user_code}
+	</update>
+	
+	
+	<!-- 유저 정보 업데이트 -->
+	<update id="updateUserDetail" parameterType="menuVO">
+		UPDATE t_user_info
+		   SET user_gender = #{user_gender}
+		   	 , user_birth = #{user_birth}
+		   	 , mdfy_by = #{user_code}
+			 , mdfy_dt = now()
+		 WHERE user_code = #{user_code}
+	</update>
+	
+	
+	<!-- 유저 탈퇴 처리 -->
+	<delete id="deleteUserAction" parameterType="menuVO">
+		UPDATE t_user_info 
+		   SET use_yn = 'N'
+		 WHERE user_code = #{user_code}
+	</delete>
+
+	
+	<!-- 가족 관계 정보 조회 -->
+	<select id="getIndUserFamilyList" parameterType="menuVO" resultType="hmap">
 		SELECT t1.seq AS family_seq
 			 , t2.user_code
 			 , t2.user_nm 
 			 , t1.f_user_code AS family_user_code
 			 , t3.user_nm AS family_user_nm
 			 , t1.f_relation AS family_relation
+			 , t2.user_img
+			 , t2.user_gender
+			 , t2.user_birth
 		  FROM t_user_family_mapp t1
 	INNER JOIN t_user_info t2
 			ON t1.o_user_code = t2.user_code
@@ -96,37 +116,8 @@
 	</select>
 	
 	
-	<!-- 유저 코드 중복체크 -->
-	<select id="getUserCodeDupChk" parameterType="userInfoVO" resultType="int">
-		SELECT COUNT(*)
-		  FROM t_user_info
-		 WHERE user_code = #{user_code} 
-	</select>
-	
-	
-	<!-- 유저 정보 업데이트 -->
-	<update id="updateUserDetail" parameterType="userInfoVO">
-		UPDATE t_user_info
-		   SET mdfy_by = 'admin'
-			 , mdfy_dt = now()
-		<if test='user_nm != null and !"".equals(user_nm)'>
-			 , user_nm = #{user_nm}
-		</if>
-		<if test='mdfy_user_code != null and !"".equals(mdfy_user_code)'>
-			 , mdfy_user_code = #{mdfy_user_code}
-		</if>
-		<if test='user_addr != null and !"".equals(user_addr)'>
-			 , user_addr = #{user_addr}
-		</if>
-		<if test='img_file_byte != null and !"".equals(img_file_byte)'>
-			 , user_img = #{img_file_byte}
-		</if>
-		 WHERE user_code = #{user_code}
-	</update>
-	
-	
 	<!-- 유저 가족 관계 신규등록 -->
-	<insert id="insertUserFamilyMapp" parameterType="userInfoVO">
+	<insert id="insertUserFamilyMapp" parameterType="menuVO">
 		INSERT INTO t_user_family_mapp (
 			o_user_code
 			, f_user_code
@@ -141,6 +132,38 @@
 		</if>
 		)
 	</insert>
+
+
+	<!-- 유저 가족 관계 수정 -->
+	<update id="deleteUserFamilyMapp" parameterType="menuVO">
+		DELETE
+		  FROM t_user_family_mapp
+		 WHERE 1=1
+		   AND seq = ${family_seq}
+	</update>
+
+
+	
+	<!-- 유저 정보 업데이트 -->
+<!-- 	<update id="updateUserDetail" parameterType="userInfoVO"> -->
+<!-- 		UPDATE t_user_info -->
+<!-- 		   SET mdfy_by = 'admin' -->
+<!-- 			 , mdfy_dt = now() -->
+<!-- 		<if test='user_nm != null and !"".equals(user_nm)'> -->
+<!-- 			 , user_nm = #{user_nm} -->
+<!-- 		</if> -->
+<!-- 		<if test='mdfy_user_code != null and !"".equals(mdfy_user_code)'> -->
+<!-- 			 , mdfy_user_code = #{mdfy_user_code} -->
+<!-- 		</if> -->
+<!-- 		<if test='user_addr != null and !"".equals(user_addr)'> -->
+<!-- 			 , user_addr = #{user_addr} -->
+<!-- 		</if> -->
+<!-- 		<if test='img_file_byte != null and !"".equals(img_file_byte)'> -->
+<!-- 			 , user_img = #{img_file_byte} -->
+<!-- 		</if> -->
+<!-- 		 WHERE user_code = #{user_code} -->
+<!-- 	</update> -->
+	
 	
 	
 	<!-- 유저 가족 관계 수정 -->
@@ -196,14 +219,6 @@
 			#{user_birth}
 		)
 	</insert>
-	
-	
-	<!-- 유저 탈퇴 처리 -->
-	<delete id="deleteUserAction" parameterType="userInfoVO">
-		UPDATE t_user_info 
-		   SET use_yn = 'N'
-		 WHERE user_code = #{user_code}
-	</delete>
 	
 	
 	<!-- 유저 정보 이력적재 -->

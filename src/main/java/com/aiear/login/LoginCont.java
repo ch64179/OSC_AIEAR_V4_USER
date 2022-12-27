@@ -2,6 +2,7 @@ package com.aiear.login;
 
 import io.swagger.annotations.ApiOperation;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,11 +20,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.aiear.config.session.AuthRequest;
-import com.aiear.config.session.AuthenticateUtil;
 import com.aiear.config.session.JwtUtil;
 //import com.aiear.config.session.JwtManager;
 //import com.aiear.config.session.Member;
@@ -31,12 +33,14 @@ import com.aiear.dao.CommonDAO;
 import com.aiear.dao.HospitalMngDAO;
 import com.aiear.dao.LoginDAO;
 import com.aiear.dao.SMSDAO;
+import com.aiear.dao.SMTPDAO;
+import com.aiear.dao.UserMngDAO;
 import com.aiear.util.LoginUtil;
-import com.aiear.util.SMSUtil;
-import com.aiear.vo.HospitalInfoVO;
+import com.aiear.util.SMTPUtil;
 import com.aiear.vo.LoginVO;
 import com.aiear.vo.ResponseVO;
-import com.aiear.vo.SMSVO;
+import com.aiear.vo.SMTPVO;
+import com.aiear.vo.UserInfoVO;
 
 
 @RestController
@@ -57,10 +61,19 @@ public class LoginCont {
 	private SMSDAO smsDAO;
 	
 	@Autowired
+	private SMTPDAO smtpDAO;
+	
+	@Autowired
 	private HospitalMngDAO hsptDAO;
 	
 	@Autowired
+	private UserMngDAO userDAO;
+	
+	@Autowired
     private JwtUtil jwtUtil;
+	
+	@Autowired
+	private SMTPUtil smtpUtil;
 	 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -75,6 +88,9 @@ public class LoginCont {
 	@Value("${coolsms.api.secret}")
 	String COOL_SMS_API_SECRET;
 	
+	@Value("${spring.mail.username}")
+	String GMAIL_USER_NAME;
+	
 	
 	@ApiOperation(value = "로그인"
 				, notes = "로그인"
@@ -82,6 +98,10 @@ public class LoginCont {
 						+ "<br> 	- 필수값"
 						+ "\n 2. user_pwd"
 						+ "<br> 	- 필수값"
+						+ "<br>"
+						+ "<br>▶ 관리자 구분 : use_type 값이 'ADMIN'일 경우"
+//						+ "<br>▶ 신규구분 : new_yn 값이 'Y'일 경우"
+						+ "<br>▶ 탈퇴구분 : use_yn 값이 'N'일 경우"
 				)
 	@PostMapping(value = "normalLogin.do")
 	public @ResponseBody ResponseVO normalLogin(
@@ -136,8 +156,9 @@ public class LoginCont {
 			
 			try {
 				AuthRequest authRequest = new AuthRequest();
-				authRequest.setHospitalId(loginVO.getUser_id());
-				authRequest.setHospitalPwd(loginVO.getUser_pwd());
+				authRequest.setUserId(loginVO.getUser_id());
+				authRequest.setUserPwd(loginVO.getUser_pwd());
+				authRequest.setUserType(pwdChk.get("user_type").toString());
 				authToken = generateTokenStr(authRequest);
 				refreshToken = generateRefreshTokenStr(authRequest);
 				
@@ -166,21 +187,21 @@ public class LoginCont {
 	
 	@ApiOperation(value = "토큰 발급"
 			, notes = "토큰 발급"
-					+ "\n 1. hospitalId"
+					+ "\n 1. userId"
 					+ "<br> 	- 필수값"
-					+ "\n 1. hospitalPwd"
+					+ "\n 1. userPwd"
 					+ "<br> 	- 필수값"
 			)
 	@PostMapping("/authenticate")
 	public String generateToken(@RequestBody AuthRequest authRequest) throws Exception {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authRequest.getHospitalId(), authRequest.getHospitalPwd())
+                    new UsernamePasswordAuthenticationToken(authRequest.getUserId(), authRequest.getUserPwd())
             );
         } catch (Exception ex) {
             throw new Exception("inavalid username/password");
         }
-        return jwtUtil.generateToken(authRequest.getHospitalId());
+        return jwtUtil.generateToken(authRequest.getUserId(), authRequest.getUserPwd(), authRequest.getUserType());
     }
 	
 	
@@ -195,12 +216,12 @@ public class LoginCont {
 	public String generateRefreshToken(@RequestBody AuthRequest authRequest) throws Exception {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authRequest.getHospitalId(), authRequest.getHospitalPwd())
+                    new UsernamePasswordAuthenticationToken(authRequest.getUserId(), authRequest.getUserPwd())
             );
         } catch (Exception ex) {
             throw new Exception("inavalid username/password");
         }
-        return jwtUtil.generateRefreshToken(authRequest.getHospitalId());
+        return jwtUtil.generateRefreshToken(authRequest.getUserId(), authRequest.getUserPwd(), authRequest.getUserType());
     }
 	
 	
@@ -225,65 +246,6 @@ public class LoginCont {
 	}
 	
 	
-	@ApiOperation(value = "아이디 찾기"
-			, notes = "아이디 찾기"
-					+ "\n 1. mobile_tel_no"
-					+ "<br> 	- 필수값"
-			)
-	@PostMapping(value = "searchIdInfo.do")
-	public @ResponseBody ResponseVO serachIdInfo(
-			HttpServletRequest req,
-			HttpServletResponse res,
-			@RequestBody LoginVO loginVO) {
-		
-		logger.info("■■■■■■ searchIdInfo / loginVO : {}", loginVO.beanToHmap(loginVO).toString());
-		
-		ResponseVO resVO = new ResponseVO();
-		
-		try {
-			if(loginVO.getMobile_tel_no() == null || "".equals(loginVO.getMobile_tel_no().toString())){
-				resVO.setMessage("전화번호를 입력해 주세요");
-				resVO.setResult(false);
-				resVO.setStatus(400);
-				return resVO;
-			}
-			
-			Map<String, Object> srchIdInfo = loginDAO.searchIdPwdInfo(loginVO);
-			
-			if(srchIdInfo == null){
-				resVO.setMessage(loginVO.getUser_id() + " / 일치하는 계정이 없습니다.");
-				resVO.setResult(false);
-				resVO.setStatus(400);
-			} else { 
-				
-				//TODO. COOLSMS API 전송 로직 추가
-				//	1. SMS 전송 및 이력 적재 (임시로 COOLSMS 테스트 계정으로 진행)
-				String msg = "[AIEAR 계정 찾기] 귀하의 번호로 가입되어 있는 계정 : " + srchIdInfo.get("user_id").toString();
-	
-				SMSVO smsVO = new SMSVO();
-				smsVO.setTo_mobile_no(srchIdInfo.get("mobile_tel_no").toString());
-				smsVO.setSend_msg(msg);
-				smsVO.setFrom_mobile_no(COOL_SMS_MOBILE_NO);
-				smsVO.setApi_key(COOL_SMS_API_KEY);
-				smsVO.setApi_secret(COOL_SMS_API_SECRET);
-				
-				SMSVO smsRsltVO = SMSUtil.sendSMS(smsVO);
-				logger.info("■■■■■■ smsRsltVO : {}", smsRsltVO.toString());
-				
-				smsDAO.insertSMSSendHst(smsRsltVO);
-				
-				resVO.setData(srchIdInfo);
-				resVO.setMessage("아이디 찾기 성공");
-				resVO.setResult(true);
-			}
-		} catch (Exception e) {
-			// TODO: handle exception
-			resVO.setStatus(400);
-		}
-		return resVO;
-	}
-	
-
 	@ApiOperation(value = "임시 비밀번호 발급"
 			, notes = "임시 비밀번호 발급"
 					+ "\n 1. user_id"
@@ -309,12 +271,6 @@ public class LoginCont {
 				resVO.setStatus(400);
 				return resVO;
 			}
-			if(loginVO.getMobile_tel_no() == null || "".equals(loginVO.getMobile_tel_no().toString())){
-				resVO.setMessage("전화번호를 입력해 주세요");
-				resVO.setResult(false);
-				resVO.setStatus(400);
-				return resVO;
-			}
 			
 			Map<String, Object> srchIdInfo = loginDAO.searchIdPwdInfo(loginVO);
 			
@@ -323,34 +279,39 @@ public class LoginCont {
 				resVO.setResult(false);
 				resVO.setStatus(400);
 			} else {
-				//TODO. COOLSMS API 전송 로직 추가
-				//	1. 임시 비밀번호 생성 테스트
+				//TODO. GOOGLE SMTP 전송 로직 추가
+				//	1. 임시 비밀번호 생성
 				String rndPwd = LoginUtil.getRamdomPassword(10);
 				srchIdInfo.put("rnd_pwd", rndPwd);
 				
 				//	2. SMS 전송 및 이력 적재 (임시로 COOLSMS 테스트 계정으로 진행)
 				String msg = "[비밀번호 변경] 임시 비밀번호 생성 완료 : " + rndPwd;
 				
-				SMSVO smsVO = new SMSVO();
-				smsVO.setFrom_mobile_no(srchIdInfo.get("mobile_tel_no").toString());
-				smsVO.setSend_msg(msg);
-				smsVO.setTo_mobile_no(COOL_SMS_MOBILE_NO);
-				smsVO.setApi_key(COOL_SMS_API_KEY);
-				smsVO.setApi_secret(COOL_SMS_API_SECRET);
+				SMTPVO smtpVO = new SMTPVO();
 				
-				SMSVO smsRsltVO = SMSUtil.sendSMS(smsVO);
-				logger.info("■■■■■■ smsRsltVO : {}", smsRsltVO.toString());
+				smtpVO.setFrom_email_addr(loginVO.getUser_id());
+				smtpVO.setTo_email_addr(GMAIL_USER_NAME);
 				
-				smsDAO.insertSMSSendHst(smsRsltVO);
+				smtpVO.setText(smtpUtil.smtpText(srchIdInfo.get("user_nm").toString(), rndPwd));
+				
+				Map<String, Object> smtpRslt = smtpUtil.sendSimpleMessage(smtpVO.getFrom_email_addr(), smtpVO.getSubject(), smtpVO.getText());
+				
+				smtpVO.setSmtp_rslt(smtpRslt.get("result").toString());
+				
+				logger.info("■■■■■■ smtpVO : {}", smtpVO.toString());
+				
+				smtpDAO.insertSMTPSendHst(smtpVO);
 				
 				//	3. 임시 비밀번호로 업데이트
 				loginVO.setTemp_pwd(rndPwd);
-				Integer rslt = loginDAO.updateHsptTempPwd(loginVO);
+				Integer rslt = loginDAO.updateUserTempPwd(loginVO);
 				
 				if(rslt > 0){
-					HospitalInfoVO hVO = new HospitalInfoVO();
-					hVO.setHospital_id(loginVO.getUser_id());
-					hsptDAO.insertHospitalHst(hVO);
+					UserInfoVO userVO = new UserInfoVO();
+					userVO.setUser_id(loginVO.getUser_id());
+					userVO.setUser_code(srchIdInfo.get("user_code").toString());
+					
+					userDAO.insertUserHst(userVO);
 					
 					resVO.setData(srchIdInfo);
 					resVO.setMessage("임시 비밀번호 발급 성공");
@@ -369,29 +330,98 @@ public class LoginCont {
 		
 		return resVO;
 	}
+	
 
+	@ApiOperation(value = "회원가입"
+			, notes = "회원가입"
+					+ "\n 1. user_id"
+					+ "<br>		- 필수값"
+					+ "\n 2. user_nm"
+					+ "<br> 	- 필수값"
+					+ "\n 3. user_pwd"
+					+ "<br> 	- 필수값"
+					+ "\n 4. kakao_yn"
+					+ "<br> 	- 선택값(Default : N)"
+					+ "\n 5. naver_yn"
+					+ "<br> 	- 선택값(Default : N)"
+					+ "\n 6. user_img"
+					+ "<br> 	- 선택값"
+					+ "\n 7. user_gender"
+					+ "<br> 	- 선택값"
+					+ "\n 8. user_birth"
+					+ "<br> 	- 선택값"
+					+ "\n 9. img_file"
+					+ "<br> 	- 선택값"
+			)
+	@PostMapping(value = "insertUserInfo.do")
+	public @ResponseBody ResponseVO insertUserInfo(	
+			HttpServletRequest req,
+			HttpServletResponse res,
+			@RequestParam(value = "img_file", required = false) MultipartFile img_file,
+			UserInfoVO userVO) {
+		
+		logger.info("■■■■■■ insertUserInfo / userVO : {}", userVO.beanToHmap(userVO).toString());
+		
+		ResponseVO rsltVO = new ResponseVO();
+		Map<String, Object> rslt = new HashMap<String, Object>();
+		int cnt = -1;
+		
+		try {
+			LoginVO loginVO = new LoginVO();
+			loginVO.setUser_id(userVO.getUser_id());
+			
+			Map<String, Object> dupCnt = loginDAO.normalLoginIdProcess(loginVO);
+			if(dupCnt != null) {
+				rslt.put("cnt", cnt);
+				rslt.put("msg", "FAIL / Duplication ID");
+			} else {
+				byte[] b_img_file;
+				
+				if(img_file != null || "".equals(img_file)) {
+					b_img_file = img_file.getBytes();
+					userVO.setImg_file_byte(b_img_file);
+				}
+				
+				userVO.setUser_code(userDAO.getGenUserCode());
+				
+				cnt = userDAO.insertUserInfo(userVO);
+				cnt = cnt > 0 ? userDAO.insertUserHst(userVO) : cnt; 
+				
+				rslt.put("cnt", cnt);
+				rslt.put("msg", "SUCCESS");	
+			}
+		} catch (Exception e) {
+			// TODO: handle exception
+			rslt.put("msg", e.getMessage());
+			rslt.put("cnt", cnt);
+			rsltVO.setStatus(400);
+		}
+		
+		return rsltVO;
+	}
+	
 	
 	public String generateTokenStr(AuthRequest authRequest) throws Exception {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authRequest.getHospitalId(), authRequest.getHospitalPwd())
+                    new UsernamePasswordAuthenticationToken(authRequest.getUserId(), authRequest.getUserPwd())
             );
         } catch (Exception ex) {
             throw new Exception("inavalid username/password");
         }
-        return jwtUtil.generateToken(authRequest.getHospitalId());
+        return jwtUtil.generateToken(authRequest.getUserId(), authRequest.getUserPwd(), authRequest.getUserType());
     }
 	
 	
 	public String generateRefreshTokenStr(AuthRequest authRequest) throws Exception {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authRequest.getHospitalId(), authRequest.getHospitalPwd())
+                    new UsernamePasswordAuthenticationToken(authRequest.getUserId(), authRequest.getUserPwd())
             );
         } catch (Exception ex) {
             throw new Exception("inavalid username/password");
         }
-        return jwtUtil.generateRefreshToken(authRequest.getHospitalId());
+        return jwtUtil.generateRefreshToken(authRequest.getUserId(), authRequest.getUserPwd(), authRequest.getUserType());
     }
 	
 }

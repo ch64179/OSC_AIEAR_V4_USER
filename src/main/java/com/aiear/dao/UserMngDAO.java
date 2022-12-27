@@ -98,4 +98,25 @@ public interface UserMngDAO {
 	* @return
 	*/
 	public int updateUserFamilyMapp(UserInfoVO vo);
+	
+	
+	/**
+	 * Description	: 
+	 * @method		: insertUserInfo
+	 * @author		: pcw
+	 * @date		: 2022. 12. 20.
+	 * @param vo
+	 * @return
+	 */
+	public int insertUserInfo(UserInfoVO vo);
+	
+	
+	/**
+	 * Description	: 
+	 * @method		: getGenUserCode
+	 * @author		: pcw
+	 * @date		: 2022. 12. 20.
+	 * @return
+	 */
+	public String getGenUserCode();
 }

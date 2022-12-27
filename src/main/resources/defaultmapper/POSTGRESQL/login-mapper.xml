@@ -10,20 +10,9 @@
 			 , t1.user_nm
 			 , t1.user_pwd
 			 , t1.user_type
-		  FROM (SELECT user_id
-		  			 , user_nm
-					 , user_pwd
-					 , user_type
-				  FROM t_user_info
-				 WHERE 1=1
-				   AND user_type = 'ADMIN'
-				 UNION ALL
-				SELECT hospital_id AS user_id
-					 , hospital_nm AS user_nm
-					 , hospital_pwd AS user_pwd
-					 , 'HOSPITAL' AS user_type
-				  FROM t_hospital_info) AS t1
+		  FROM t_user_info  t1
 		 WHERE 1=1
+		   AND t1.use_yn = 'Y'
 		   AND t1.user_id = #{user_id}
 	</select>
 	
@@ -33,20 +22,10 @@
 			 , t1.user_nm
 			 , t1.user_pwd
 			 , t1.user_type
-		  FROM (SELECT user_id
-		  			 , user_nm
-					 , user_pwd
-					 , user_type
-				  FROM t_user_info
-				 WHERE 1=1
-				   AND user_type = 'ADMIN'
-				 UNION ALL
-				SELECT hospital_id AS user_id
-					 , hospital_nm AS user_nm
-					 , hospital_pwd AS user_pwd
-					 , 'HOSPITAL' AS user_type
-				  FROM t_hospital_info) AS t1
+			 , t1.use_yn
+		  FROM t_user_info t1
 		 WHERE 1=1
+		   AND t1.use_yn = 'Y'
 		   AND t1.user_id = #{user_id}
 		   AND t1.user_pwd = #{user_pwd}
 	</select>
@@ -55,37 +34,27 @@
 	<!-- ID, PWD 찾기 -->	
 	<select id="searchIdPwdInfo" parameterType="userInfoVO" resultType="hmap">		
 		SELECT t1.user_id
+			 , t1.user_nm
 			 , t1.user_pwd
 			 , t1.user_type
+			 , t1.user_code
 			 , t1.mobile_tel_no
-		  FROM (SELECT user_id
-					 , user_pwd
-					 , user_type
-					 , mobile_tel_no
-				  FROM t_user_info
-				 WHERE 1=1
-				   AND user_type = 'ADMIN'
-				 UNION ALL
-				SELECT hospital_id AS user_id
-					 , hospital_pwd AS user_pwd
-					 , 'HOSPITAL' AS user_type
-					 , mgr_tel_no AS mobile_tel_no
-				  FROM t_hospital_info) AS t1
+		  FROM t_user_info t1
 		 WHERE 1=1
+		   AND t1.use_yn = 'Y'
+		<if test='mobile_tel_no != null and !"".equals(mobile_tel_no)'>
 		   AND t1.mobile_tel_no = #{mobile_tel_no}
-		<if test='user_id != null and !"".equals(user_id)'>
-		   AND t1.user_id = #{user_id}
 		</if>
+		   AND t1.user_id = #{user_id}
 		 ORDER BY user_type
 		 		, user_id
 	</select>
 		
 		
-	<update id="updateHsptTempPwd" parameterType="userInfoVO">
-		UPDATE t_hospital_info
-		   SET hospital_pwd = #{temp_pwd}
-		 WHERE mgr_tel_no = #{mobile_tel_no}
-		   AND hospital_id = #{user_id}
+	<update id="updateUserTempPwd" parameterType="userInfoVO">
+		UPDATE t_user_info
+		   SET user_pwd = #{temp_pwd}
+		 WHERE user_id = #{user_id}
 	</update>
 	
 	
@@ -95,5 +64,6 @@
 		     , refresh_token = #{refresh_token}
 		 WHERE hospital_id = #{user_id}
 	</update>
+	
 
 </mapper>
