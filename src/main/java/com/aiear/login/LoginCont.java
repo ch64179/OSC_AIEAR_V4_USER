@@ -3,6 +3,7 @@ package com.aiear.login;
 import io.swagger.annotations.ApiOperation;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,7 +38,9 @@ import com.aiear.dao.SMSDAO;
 import com.aiear.dao.SMTPDAO;
 import com.aiear.dao.UserMngDAO;
 import com.aiear.util.LoginUtil;
+import com.aiear.util.SHA512;
 import com.aiear.util.SMTPUtil;
+import com.aiear.vo.DiagnosisVO;
 import com.aiear.vo.LoginVO;
 import com.aiear.vo.ResponseVO;
 import com.aiear.vo.SMTPVO;
@@ -125,6 +129,7 @@ public class LoginCont {
 			resVO.setMessage("아이디를 입력해 주세요.");
 			resVO.setResult(false);
 			resVO.setStatus(400);
+			res.setStatus(400);
 			return resVO;
 		}
 		
@@ -132,6 +137,7 @@ public class LoginCont {
 			resVO.setMessage("비밀번호를 입력해 주세요.");
 			resVO.setResult(false);
 			resVO.setStatus(400);
+			res.setStatus(400);
 			return resVO;
 		}
 		
@@ -141,8 +147,14 @@ public class LoginCont {
 			resVO.setMessage(loginVO.getUser_id() + " / 일치하는 계정이 없습니다.");
 			resVO.setResult(false);
 			resVO.setStatus(400);
+			res.setStatus(400);
 			return resVO;
 		}
+		
+		//TODO: 로그인 비밀번호 암호화
+		String saltVO = idChk.get("user_salt").toString();
+		String encPwd = SHA512.sha256(loginVO.getUser_pwd(), saltVO);
+		loginVO.setUser_pwd(encPwd);
 		
 		Map<String, Object> pwdChk = loginDAO.normalLoginPwdProcess(loginVO);
 		
@@ -150,6 +162,7 @@ public class LoginCont {
 			resVO.setMessage("비밀번호가 일치하지 않습니다.");
 			resVO.setResult(false);
 			resVO.setStatus(400);
+			res.setStatus(400);
 		} else {
 			String authToken = null;
 			String refreshToken = null;
@@ -172,6 +185,7 @@ public class LoginCont {
 				e.printStackTrace();
 				resVO.setStatus(400);
 				resVO.setMessage(pwdChk.get("user_type") + " 일치하는 계정이 없습니다, 토큰 생성에 실패했습니다.");
+				res.setStatus(400);
 			}
 			
 			loginVO.setRefresh_token(refreshToken);
@@ -269,6 +283,7 @@ public class LoginCont {
 				resVO.setMessage("아이디를 입력해 주세요.");
 				resVO.setResult(false);
 				resVO.setStatus(400);
+				res.setStatus(400);
 				return resVO;
 			}
 			
@@ -302,8 +317,12 @@ public class LoginCont {
 				
 				smtpDAO.insertSMTPSendHst(smtpVO);
 				
-				//	3. 임시 비밀번호로 업데이트
-				loginVO.setTemp_pwd(rndPwd);
+				// 3. 임시 비밀번호로 업데이트
+				//		+ 비밀번호 암호화 처리
+				String userSalt = SHA512.getSalt();
+				String encPwd = SHA512.sha256(rndPwd, userSalt);
+				loginVO.setTemp_pwd(encPwd);
+				loginVO.setUser_salt(userSalt);
 				Integer rslt = loginDAO.updateUserTempPwd(loginVO);
 				
 				if(rslt > 0){
@@ -320,12 +339,15 @@ public class LoginCont {
 					resVO.setMessage("임시 비밀번호 저장 실패");
 					resVO.setResult(false);
 					resVO.setStatus(400);
+					res.setStatus(400);
 				}
 			}
 			
 		} catch (Exception e) {
 			// TODO: handle exception
 			resVO.setStatus(400);
+			resVO.setMessage("임시 비밀번호 발급 프로세스 오류");
+			res.setStatus(400);
 		}
 		
 		return resVO;
@@ -344,13 +366,11 @@ public class LoginCont {
 					+ "<br> 	- 선택값(Default : N)"
 					+ "\n 5. naver_yn"
 					+ "<br> 	- 선택값(Default : N)"
-					+ "\n 6. user_img"
-					+ "<br> 	- 선택값"
-					+ "\n 7. user_gender"
-					+ "<br> 	- 선택값"
-					+ "\n 8. user_birth"
-					+ "<br> 	- 선택값"
-					+ "\n 9. img_file"
+					+ "\n 6. user_gender"
+					+ "<br> 	- 선택값(F, M)"
+					+ "\n 7. user_birth"
+					+ "<br> 	- 선택값(yyyyMMdd)"
+					+ "\n 8. img_file"
 					+ "<br> 	- 선택값"
 			)
 	@PostMapping(value = "insertUserInfo.do")
@@ -373,8 +393,17 @@ public class LoginCont {
 			Map<String, Object> dupCnt = loginDAO.normalLoginIdProcess(loginVO);
 			if(dupCnt != null) {
 				rslt.put("cnt", cnt);
-				rslt.put("msg", "FAIL / Duplication ID");
+				rslt.put("msg", "존재하는 계정입니다.");
+				rsltVO.setResult(false);
+				rsltVO.setStatus(400);
+				res.setStatus(400);
 			} else {
+				
+				String userSalt = SHA512.getSalt();
+				String encPwd = SHA512.sha256(userVO.getUser_pwd(), userSalt);
+				userVO.setUser_pwd(encPwd);
+				userVO.setUser_salt(userSalt);
+				
 				byte[] b_img_file;
 				
 				if(img_file != null || "".equals(img_file)) {
@@ -394,10 +423,119 @@ public class LoginCont {
 			// TODO: handle exception
 			rslt.put("msg", e.getMessage());
 			rslt.put("cnt", cnt);
+			rsltVO.setResult(false);
 			rsltVO.setStatus(400);
+			res.setStatus(400);
 		}
 		
 		return rsltVO;
+	}
+	
+	
+	
+	@ApiOperation(value = "토큰 유저정보 조회"
+			, notes = "토큰 유저정보 조회"
+			)
+	@GetMapping(value = "getTokenByUserInfo.do")
+	public @ResponseBody Map<String, Object> getTokenByUserInfo(
+			HttpServletRequest req,
+			HttpServletResponse res,
+			UserInfoVO userVO
+			) {
+		Map<String, Object> userInfo = new HashMap<String, Object>();
+		
+		try {
+			String user_id = jwtUtil.getLoginIdbyToken(req);
+			userVO.setUser_id(user_id);
+			
+			logger.info("■■■■■■ getTokenByUserInfo / UserInfoVO : {}", userVO.beanToHmap(userVO).toString());
+			userInfo = userDAO.getTokenByUserInfo(userVO);
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+			
+		}
+		
+		return userInfo;
+	}
+	
+	
+	@ApiOperation(value = "토큰 재발급"
+			, notes = "Refresh Token으로 토큰 재발급"
+					+ "\n 1. user_id"
+					+ "<br> 	- 유저 ID"
+					+ "\n 2. refresh_token"
+					+ "<br> 	- Refresh Token값"
+			)
+	@PostMapping(value = "reAuthenticate.do")
+	public @ResponseBody ResponseVO reAuthenticate(
+			HttpServletRequest req,
+			HttpServletResponse res,
+			@RequestBody LoginVO loginVO
+//			@RequestParam(value = "user_id", required = true) String user_id,
+//			@RequestParam(value = "refresh_token", required = true) String refresh_token
+		) {
+		
+//		LoginVO loginVO = new LoginVO();
+//		loginVO.setUser_id(user_id);
+		
+		logger.info("■■■■■■ reAuthenticate / loginVO : {}", loginVO.beanToHmap(loginVO).toString());
+		
+		ResponseVO resVO = new ResponseVO();
+		Map<String, Object> tokenMap = new HashMap<String, Object>();
+		
+		Map<String, Object> idChk = loginDAO.normalLoginIdProcess(loginVO);
+		
+		if(idChk == null){
+			resVO.setResult(true);
+			resVO.setMessage(loginVO.getUser_id() + " / 일치하는 계정 또는 토큰정보가 없습니다.");
+			resVO.setResult(false);
+			resVO.setStatus(400);
+			res.setStatus(400);
+			return resVO;
+		}
+		
+		if(loginVO.getRefresh_token().equals(idChk.get("refresh_token"))) {
+			String authToken = null;
+			String refreshToken = null;
+			
+			try {
+				AuthRequest authRequest = new AuthRequest();
+				
+				authRequest.setUserId(loginVO.getUser_id());
+				authRequest.setUserPwd(idChk.get("user_pwd").toString());
+				authRequest.setUserType(idChk.get("user_type").toString());
+				
+				authToken = generateTokenStr(authRequest);
+				refreshToken = generateRefreshTokenStr(authRequest);
+				
+				tokenMap.put("accessToken", authToken);
+				tokenMap.put("refreshToken", refreshToken);
+				
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				resVO.setStatus(400);
+				resVO.setMessage(idChk.get("user_type") + " 일치하는 계정이 없습니다, 토큰 생성에 실패했습니다.");
+				res.setStatus(400);
+			}
+			
+			loginVO.setRefresh_token(refreshToken);
+			loginDAO.updateLoginInfo(loginVO);
+			
+			resVO.setData(tokenMap);
+			resVO.setResult(true);
+		} else {
+			resVO.setResult(true);
+			resVO.setMessage(loginVO.getUser_id() + " / 일치하는 계정 또는 토큰정보가 없습니다.");
+			resVO.setResult(false);
+			resVO.setStatus(400);
+			res.setStatus(400);
+			return resVO;
+		}
+		
+		return resVO;
 	}
 	
 	

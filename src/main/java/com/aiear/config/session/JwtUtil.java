@@ -4,6 +4,7 @@ package com.aiear.config.session;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +12,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @packageName : com.aiear.config.session
@@ -25,7 +28,7 @@ import java.util.function.Function;
 @Service
 public class JwtUtil {
 
-    private String secret = "javatechie";
+    private String secret = "eyJhbGciOiJIUzI1NiJ9cwp=";
 
     public String extractUserId(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -90,7 +93,7 @@ public class JwtUtil {
 //                .compact();
     	
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 3))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7))
                 .signWith(SignatureAlgorithm.HS256, secret).compact();
     }
     
@@ -99,7 +102,7 @@ public class JwtUtil {
       return Jwts.builder()
               .setClaims(claims) // 정보 저장
               .setIssuedAt(new Date(System.currentTimeMillis())) // 토큰 발행 시간 정보
-              .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7)) // set Expire Time
+              .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 365)) // set Expire Time
               .signWith(SignatureAlgorithm.HS256, secret)  // 사용할 암호화 알고리즘과
               // signature 에 들어갈 secret값 세팅
               .compact();
@@ -108,5 +111,18 @@ public class JwtUtil {
     public Boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+    
+    public String getLoginIdbyToken(HttpServletRequest request) {
+    	String headerAuthToken = request.getHeader("Authorization");
+    	String token = null;
+        String userId = null;
+    	
+    	if (headerAuthToken != null && headerAuthToken.startsWith("Bearer ")) {
+    		token = headerAuthToken.substring(7);
+    		userId = extractUserId(token);
+    	}
+    	
+    	return userId;
     }
 }

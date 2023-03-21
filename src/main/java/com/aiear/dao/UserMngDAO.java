@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.stereotype.Repository;
 
+import com.aiear.vo.MenuVO;
 import com.aiear.vo.UserInfoVO;
 
 @Mapper
@@ -119,4 +120,37 @@ public interface UserMngDAO {
 	 * @return
 	 */
 	public String getGenUserCode();
+	
+	
+	/**
+	 * Description	: 
+	 * @method		: getTokenByUserInfo
+	 * @author		: pcw
+	 * @date		: 2023. 3. 19.
+	 * @param vo
+	 * @return
+	 */
+	public Map<String, Object> getTokenByUserInfo(UserInfoVO vo);
+	
+	
+	/**
+	 * Description	: 
+	 * @method		: insertDirectUserInfo
+	 * @author		: pcw
+	 * @date		: 2023. 3. 21.
+	 * @param vo
+	 * @return
+	 */
+	public int insertDirectUserInfo(UserInfoVO vo);
+	
+	
+	/**
+	 * Description	: 
+	 * @method		: getUserInfo
+	 * @author		: pcw
+	 * @date		: 2023. 3. 21.
+	 * @param vo
+	 * @return
+	 */
+	public Map<String, Object> getUserInfo(UserInfoVO vo);
 }

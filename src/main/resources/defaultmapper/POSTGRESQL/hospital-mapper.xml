@@ -14,9 +14,9 @@
 			 , t4.cd AS dow
 			 , t5.c_strt_tm
 			 , t5.c_end_tm
-			 , CASE WHEN t5.c_strt_tm != '' and t5.c_end_tm IS NOT NULL
+			 , CASE WHEN t5.c_strt_tm != '' and t5.c_end_tm IS NOT NULL AND t5.clinic_yn = 'Y'
 			 		THEN CASE WHEN CURRENT_TIME > CONCAT(t5.c_strt_tm, ':00')::timetz and CURRENT_TIME < CONCAT(t5.c_end_tm, ':00')::timetz
-						 	  THEN CASE WHEN CURRENT_TIME > CONCAT(t5.l_strt_tm, ':00')::timetz and CURRENT_TIME < CONCAT(t5.l_end_tm, ':00')::timetz
+						 	  THEN CASE WHEN CURRENT_TIME > CONCAT(t5.l_strt_tm, ':00')::timetz and CURRENT_TIME < CONCAT(t5.l_end_tm, ':00')::timetz  AND t5.lunch_yn = 'Y'
 							 			THEN 'REST'
 							 			ELSE 'RUN'
 							 			END
@@ -24,9 +24,9 @@
 						 	  END
 					ELSE 'IDLE'
 			 		END AS hospital_flag
-			 , CASE WHEN t5.c_strt_tm != '' and t5.c_end_tm IS NOT NULL
+			 , CASE WHEN t5.c_strt_tm != '' and t5.c_end_tm IS NOT NULL AND t5.clinic_yn = 'Y'
 			 		THEN CASE WHEN CURRENT_TIME > CONCAT(t5.c_strt_tm, ':00')::timetz and CURRENT_TIME < CONCAT(t5.c_end_tm, ':00')::timetz
-						 	  THEN CASE WHEN CURRENT_TIME > CONCAT(t5.l_strt_tm, ':00')::timetz and CURRENT_TIME < CONCAT(t5.l_end_tm, ':00')::timetz
+						 	  THEN CASE WHEN CURRENT_TIME > CONCAT(t5.l_strt_tm, ':00')::timetz and CURRENT_TIME < CONCAT(t5.l_end_tm, ':00')::timetz AND t5.lunch_yn = 'Y'
 							 			THEN '휴계 중'
 							 			ELSE '진료 중'
 							 			END
@@ -64,7 +64,7 @@
 		</choose>
 		<if test='raw_cnt != null and !"".equals(raw_cnt) and page_cnt != null and !"".equals(page_cnt)'>
 		 LIMIT ${raw_cnt}
-		OFFSET (${page_cnt} - 1) * ${raw_cnt};
+		OFFSET (${page_cnt} - 1) * ${raw_cnt}
 		</if>
 	</select>
 	

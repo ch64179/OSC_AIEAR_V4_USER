@@ -23,6 +23,12 @@
 		<!-- 메뉴 VO -->
 		<typeAlias alias="menuVO" type="com.aiear.vo.MenuVO" />
 		
+		<!-- SMTP VO -->
+		<typeAlias alias="apiMngVO" type="com.aiear.vo.ApiMngVO" />
+		
+		<!-- 진단 VO -->
+		<typeAlias alias="diagnosisVO" type="com.aiear.vo.DiagnosisVO" />
+		
 		<!-- SMS VO -->
 		<typeAlias alias="smsVO" type="com.aiear.vo.SMSVO" />
 		

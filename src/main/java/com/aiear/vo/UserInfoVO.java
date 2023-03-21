@@ -78,9 +78,13 @@ public class UserInfoVO extends ResponseVO {
 	@ApiParam(value = "유저 생일")
 	private String user_birth;
 	
+	//유저 SALT 값
+	private String user_salt;
 	
 	//이미지 삽임 전용
 	private byte[] img_file_byte;
+	
+	private String gen_by;
 	
 	public HashMap<String, Object> beanToHmap(UserInfoVO vo) {
 		HashMap<String, Object> beanAsMap = new HashMap<String, Object>();

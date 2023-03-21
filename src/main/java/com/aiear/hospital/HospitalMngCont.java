@@ -18,18 +18,14 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.aiear.dao.CommonDAO;
 import com.aiear.dao.HospitalMngDAO;
 import com.aiear.vo.HospitalInfoVO;
-import com.aiear.vo.ResponseVO;
 
 
 @RestController
@@ -70,7 +66,7 @@ public class HospitalMngCont {
 	public @ResponseBody Map<String, Object> getHospitalList(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			@RequestBody HospitalInfoVO hsptInfoVO) {
+			HospitalInfoVO hsptInfoVO) {
 		
 		logger.info("■■■■■■ getHospitalList / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		List<Map<String, Object>> rsltList = new ArrayList<Map<String,Object>>();
@@ -84,7 +80,7 @@ public class HospitalMngCont {
 				byte[] base64 = Base64.encodeBase64(bArr);
 				
 				if(base64 != null){
-					hsptInfo.put("hospital_img_str", (new String(base64, "UTF-8")));
+					hsptInfo.put("hospital_img_str", ("data:image/jpeg;base64," + new String(base64, "UTF-8")));
 				}
 				
 				rsltList.add(hsptInfo);
@@ -110,23 +106,36 @@ public class HospitalMngCont {
 	public @ResponseBody Map<String, Object> getHospitalDetail(
 			HttpServletRequest req,
 			HttpServletResponse res,
+			@PathVariable String hospital_id,
 			HospitalInfoVO hsptInfoVO) {
 
 		logger.info("■■■■■■ getHospitalDetail / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		Map<String, Object> hsptInfo = new HashMap<String, Object>();
 		
 		try {
+			hsptInfoVO.setHospital_id(hospital_id);
+			
+			if(hsptInfoVO.getHospital_id() == null || "".equals(hsptInfoVO.getHospital_id())) {
+				hsptInfo.put("msg", "병원 ID값이 없습니다.");
+				res.setStatus(400);
+				return hsptInfo;
+			}
+			
 			hsptInfo = hsptDAO.getHospitalDetail(hsptInfoVO);
 			
 			byte[] bArr = (byte[]) hsptInfo.get("hospital_img");
 			byte[] base64 = Base64.encodeBase64(bArr);
 			
 			if(base64 != null){
-				hsptInfo.put("hospital_img_str", (new String(base64, "UTF-8")));
+				hsptInfo.put("hospital_img_base64", base64);
+				hsptInfo.put("hospital_img_str", ("data:image/jpeg;base64," + new String(base64, "UTF-8")));
 			} 
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			hsptInfoVO.setStatus(400);
+			hsptInfoVO.setMessage("병원 상세 정보 조회 실패");
+			res.setStatus(400);
 		}
 		
 		return hsptInfo;
@@ -141,12 +150,20 @@ public class HospitalMngCont {
 	public @ResponseBody Map<String, Object> getHospitalClinicList(
 			HttpServletRequest req,
 			HttpServletResponse res,
+			@PathVariable String hospital_id,
 			HospitalInfoVO hsptInfoVO) {
+		
+		Map<String, Object> list = new HashMap<String, Object>();
+		
+		hsptInfoVO.setHospital_id(hospital_id);
+		
+		if(hsptInfoVO.getHospital_id() == null || "".equals(hsptInfoVO.getHospital_id())) {
+			res.setStatus(400);
+			return list;
+		}
 		
 		logger.info("■■■■■■ getHospitalClinicList / hsptInfoVO : {}", hsptInfoVO.beanToHmap(hsptInfoVO).toString());
 		List<Map<String, Object>> hsptList = hsptDAO.getHospitalClinicList(hsptInfoVO);
-		
-		Map<String, Object> list = new HashMap<String, Object>();
 		
 		list.put("data", hsptList);
 		list.put("size", hsptList.size());

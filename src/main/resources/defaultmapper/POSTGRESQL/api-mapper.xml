@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- namespace 명은 dao 와 일치하게 작성하면 됨 -->
+<mapper namespace="com.aiear.dao.ApiMngDAO">
+
+	<!-- API Call Log 적재 -->
+	<select id="insertApiCallLog" parameterType="hMap" resultType="Integer">
+		INSERT INTO t_api_call_log (
+			call_type,
+			call_param,
+			rslt_json,
+			gen_by,
+			gen_dt,
+			param_img
+		) VALUES (
+			#{call_type},
+			#{call_param},
+			#{rslt_json},
+			#{user_code},
+			now(),
+			#{param_img}
+		)
+		RETURNING seq
+	</select>
+	
+	<insert id="insertInferenceInfo" parameterType="hMap">
+		INSERT INTO t_inference_info (
+			api_call_log_seq,
+			user_id,
+			ar,
+			myri,
+			normal,
+			ome,
+			tp,
+			tumor,
+			gen_by,
+			gen_dt,
+			ear_pos,
+			img_file
+		) values (
+			${api_call_log_seq},
+			#{user_code},
+			${rslt_json.Ar},
+			${rslt_json.Myri},
+			${rslt_json.Normal},
+			${rslt_json.Ome},
+			${rslt_json.Tp},
+			${rslt_json.Tumor},
+			#{gen_user_id},
+			now(),
+			#{ear_pos},
+			#{param_img}
+		)
+	</insert>
+	
+</mapper>

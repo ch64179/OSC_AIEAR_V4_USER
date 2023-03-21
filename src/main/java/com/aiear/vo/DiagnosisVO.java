@@ -12,37 +12,36 @@ import java.util.HashMap;
 import lombok.Data;
 
 @Data
-public class LoginVO {
+public class DiagnosisVO extends ResponseVO  {
 	
 	@ApiModelProperty(
-			name = "LoginVO",
-			example = "LoginVO"
+			name = "DiagnosisVO",
+			example = "DiagnosisVO"
 	)
 	
-	@ApiParam(value = "유저명")
-	private String user_nm;
+	@ApiParam(value = "JSON 데이터")
+	private String json_data;
 	
-	@ApiParam(value = "유저코드")
-	private String user_code;
+	@ApiParam(value = "생성자")
+	private String gen_by;
 	
-	@ApiParam(value = "유저ID")
+	@ApiParam(value = "유저 ID")
 	private String user_id;
+	
+	@ApiParam(value = "정렬타입")
+	private String order_type;
 
-	@ApiParam(value = "유저 모바일 번호")
-	private String mobile_tel_no;
+	@ApiParam(value = "정렬타입2")
+	private String order_type2;
 	
-	@ApiParam(value = "비밀번호")
-	private String user_pwd;
+	@ApiParam(value = "페이지별 로우데이터 갯수")
+	private Integer raw_cnt;
 	
-	@ApiParam(value = "임시 비밀번호")
-	private String temp_pwd;
+	@ApiParam(value = "페이지 선택")
+	private Integer page_cnt;
 	
-	@ApiParam(value = "Refresh Token")
-	private String refresh_token;
-	
-	private String user_salt;		//비밀번호 암호화 SALT 20자리
-	
-	public HashMap<String, Object> beanToHmap(LoginVO vo) {
+
+	public HashMap<String, Object> beanToHmap(DiagnosisVO vo) {
 		HashMap<String, Object> beanAsMap = new HashMap<String, Object>();
 		
 		try {

@@ -77,6 +77,7 @@ public class UserMngCont {
 		logger.info("■■■■■■ getUserList / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
 		List<Map<String, Object>> userList = userDAO.getUserListInfo(userInfoVO);
 		
+		
 		return userList;
 	}
 	
@@ -99,7 +100,7 @@ public class UserMngCont {
 			byte[] base64 = Base64.encodeBase64(bArr);
 			
 			if(base64 != null){
-				userInfo.put("user_img_str", (new String(base64, "UTF-8")));
+				userInfo.put("user_img_str", ("data:image/jpeg;base64," + new String(base64, "UTF-8")));
 			} 
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block

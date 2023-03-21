@@ -8,6 +8,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -27,6 +29,9 @@ import com.aiear.vo.LoginVO;
  */
 @Service
 public class SMTPUtil {
+
+	/** 로그 처리용 개체 선언 */
+	protected Logger logger = LogManager.getLogger(getClass());
 	
 	@Autowired
     private JavaMailSender emailSender;
@@ -75,8 +80,8 @@ public class SMTPUtil {
 	        rslt.put("result", "SUCCESS");
     	} catch (Exception e) {
     		// TODO: handle exception
+    		logger.info("=== SMTP Error Log {}", e);
     		rslt.put("result", "FAIL");
-    		
     	}
     	
     	return rslt;

@@ -76,10 +76,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.cors().configurationSource(corsConfigurationSource())
         .and().csrf().disable().authorizeRequests()
         		.antMatchers(PERMIT_URL_ARRAY).permitAll()
+//        		.antMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
         		.anyRequest().authenticated()
                 .and().exceptionHandling().and().sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+       //TODO: X-Frame-Options 설정
+       http.headers().frameOptions().sameOrigin();
     }
     
     @Bean

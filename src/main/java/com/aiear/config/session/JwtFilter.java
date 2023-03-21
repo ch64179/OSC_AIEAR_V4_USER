@@ -46,10 +46,14 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = null;
         String hospitalId = null;
 
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            token = authorizationHeader.substring(7);
-            hospitalId = jwtUtil.extractUserId(token);
-        }
+        try {
+        	if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+        		token = authorizationHeader.substring(7);
+        		hospitalId = jwtUtil.extractUserId(token);
+        	}
+		} catch (Exception e) {
+			httpServletResponse.setStatus(403);
+		}
 
         if (hospitalId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 

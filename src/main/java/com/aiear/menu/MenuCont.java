@@ -22,12 +22,18 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.aiear.config.session.JwtUtil;
 import com.aiear.dao.CommonDAO;
+import com.aiear.dao.LoginDAO;
 import com.aiear.dao.MenuDAO;
 import com.aiear.dao.UserMngDAO;
+import com.aiear.util.SHA512;
+import com.aiear.vo.LoginVO;
 import com.aiear.vo.MenuVO;
 import com.aiear.vo.ResponseVO;
 import com.aiear.vo.UserInfoVO;
@@ -48,6 +54,9 @@ public class MenuCont {
 	private UserMngDAO userDAO;
 	
 	@Autowired
+	private JwtUtil jwtUtil;
+	
+	@Autowired
 	private CommonDAO commonDAO;
 	
 	
@@ -57,23 +66,40 @@ public class MenuCont {
 	public @ResponseBody Map<String, Object> getUserProfile(
 			HttpServletRequest req,
 			HttpServletResponse res,
+			@PathVariable String user_code,
 			MenuVO menuVO) {
 	
 		logger.info("■■■■■■ getUserProfile / MenuVO : {}", menuVO.beanToHmap(menuVO).toString());
 		Map<String, Object> userInfo = new HashMap<String, Object>();
 		
 		try {
+			menuVO.setUser_code(user_code);
+			
+			if(menuVO.getUser_code() == null || "".equals(menuVO.getUser_code())) {
+				userInfo.put("msg", "유저 코드값이 없습니다.");
+				res.setStatus(400);
+				return userInfo;
+			}
+			
 			userInfo = menuDAO.getUserProfileInfo(menuVO);
 			
-			byte[] bArr = (byte[]) userInfo.get("user_img");
-			byte[] base64 = Base64.encodeBase64(bArr);
+			if(userInfo.get("user_img") != null) {
+				byte[] bArr = (byte[]) userInfo.get("user_img");
+				byte[] base64 = Base64.encodeBase64(bArr);
+				
+				if(base64 != null){
+					userInfo.put("hospital_img_base64", base64);
+					userInfo.put("user_img_str", ("data:image/jpeg;base64," + new String(base64, "UTF-8")));
+				} 
+			}
 			
-			if(base64 != null){
-				userInfo.put("user_img_str", (new String(base64, "UTF-8")));
-			} 
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			menuVO.setMessage("사용자 프로필 조회 실패");
+			menuVO.setResult(false);
+			menuVO.setStatus(400);
+			res.setStatus(400);
 		}
 		
 		return userInfo;
@@ -107,23 +133,39 @@ public class MenuCont {
 	public @ResponseBody Map<String, Object> getUserDetail(
 			HttpServletRequest req,
 			HttpServletResponse res,
+			@PathVariable String user_code,
 			MenuVO menuVO) {
 	
 		logger.info("■■■■■■ getUserDetail / MenuVO : {}", menuVO.beanToHmap(menuVO).toString());
 		Map<String, Object> userInfo = new HashMap<String, Object>();
 		
 		try {
+			menuVO.setUser_code(user_code);
+			
+			if(menuVO.getUser_code() == null || "".equals(menuVO.getUser_code())) {
+				userInfo.put("msg", "유저 코드값이 없습니다.");
+				res.setStatus(400);
+				return userInfo;
+			}
+			
 			userInfo = menuDAO.getUserDetailInfo(menuVO);
 			
-			byte[] bArr = (byte[]) userInfo.get("user_img");
-			byte[] base64 = Base64.encodeBase64(bArr);
+			if(userInfo.get("user_img") != null){
+				byte[] bArr = (byte[]) userInfo.get("user_img");
+				byte[] base64 = Base64.encodeBase64(bArr);
+				
+				if(base64 != null){
+					userInfo.put("user_img_str", ("data:image/jpeg;base64," + new String(base64, "UTF-8")));
+				} 
+			}
 			
-			if(base64 != null){
-				userInfo.put("user_img_str", (new String(base64, "UTF-8")));
-			} 
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			menuVO.setStatus(400);
+			menuVO.setResult(false);
+			menuVO.setMessage("유저 상세 정보 조회 실패");
+			res.setStatus(400);
 		}
 		
 		return userInfo;
@@ -132,15 +174,16 @@ public class MenuCont {
 	
 	@ApiOperation(value = "사용자 닉네임 업데이트"
 			, notes = "사용자 닉네임 업데이트"
-					+ "\n 1. user_code"
-					+ "<br>		- (필수)"
-					+ "\n 2. user_nm"
+					+ "\n 1. user_nm"
 					+ "<br>		- (필수)")
-	@PostMapping(value = "updateUserNm.do")
+	@PostMapping(value = "updateUserNm/{user_code}.do")
 	public @ResponseBody ResponseVO updateUserNm(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			@RequestBody MenuVO menuVO) {
+			@PathVariable String user_code) {
+		
+		MenuVO menuVO = new MenuVO();
+		menuVO.setUser_code(user_code);
 		
 		logger.info("■■■■■■ updateUserNm / menuVO : {}", menuVO.beanToHmap(menuVO).toString());
 	
@@ -149,10 +192,11 @@ public class MenuCont {
 		int cnt = -1;
 		
 		if(menuVO.getUser_code() == null || "".equals(menuVO.getUser_code())) {
-			rslt.put("msg", "사용자 코드 정보가 없습니다.");
+			rslt.put("msg", "유저 코드 정보가 없습니다.");
 			rslt.put("val", cnt);
 			rsltVO.setResult(false);
 			rsltVO.setData(rslt);
+			res.setStatus(400);
 			return rsltVO;
 		}
 		
@@ -171,7 +215,9 @@ public class MenuCont {
 			// TODO Auto-generated catch block
 			rslt.put("msg", e.getMessage());
 			rslt.put("cnt", cnt);
+			rsltVO.setResult(false);
 			rsltVO.setStatus(400);
+			res.setStatus(400);
 		}
 		
 		rsltVO.setData(rslt);
@@ -182,17 +228,18 @@ public class MenuCont {
 	
 	@ApiOperation(value = "사용자 정보 업데이트"
 			, notes = "사용자 정보 업데이트"
-					+ "\n 1. user_code"
-					+ "<br>		- (필수)"
-					+ "\n 2. user_gender"
-					+ "<br>		- (필수)"
-					+ "\n 3. user_birth"
-					+ "<br>		- (필수)")
-	@PostMapping(value = "updateUserInfo.do")
+					+ "\n 1. user_gender"
+					+ "<br>		- M,F(필수)"
+					+ "\n 2. user_birth"
+					+ "<br>		- yyyyMmdd(필수)")
+	@PostMapping(value = "updateUserInfo/{user_code}.do")
 	public @ResponseBody ResponseVO updateUserInfo(
 			HttpServletRequest req,
 			HttpServletResponse res,
+			@PathVariable String user_code,
 			@RequestBody MenuVO menuVO) {
+		
+		menuVO.setUser_code(user_code);
 		
 		logger.info("■■■■■■ updateUserInfo / menuVO : {}", menuVO.beanToHmap(menuVO).toString());
 	
@@ -205,6 +252,7 @@ public class MenuCont {
 			rslt.put("val", cnt);
 			rsltVO.setResult(false);
 			rsltVO.setData(rslt);
+			res.setStatus(400);
 			return rsltVO;
 		}
 		
@@ -223,7 +271,9 @@ public class MenuCont {
 			// TODO Auto-generated catch block
 			rslt.put("msg", e.getMessage());
 			rslt.put("cnt", cnt);
+			rsltVO.setResult(false);
 			rsltVO.setStatus(400);
+			res.setStatus(400);
 		}
 		
 		rsltVO.setData(rslt);
@@ -234,11 +284,14 @@ public class MenuCont {
 	
 	@ApiOperation(value = "사용자 탈퇴 처리"
 			, notes = "사용자 탈퇴 처리")
-	@PostMapping(value = "deleteUserAction.do")
+	@PostMapping(value = "deleteUserAction/{user_code}.do")
 	public @ResponseBody ResponseVO deleteUserAction(
 			HttpServletRequest req,
 			HttpServletResponse res,
+			@PathVariable String user_code,
 			@RequestBody MenuVO menuVO) {
+		
+		menuVO.setUser_code(user_code);
 		
 		logger.info("■■■■■■ deleteUserAction / menuVO : {}", menuVO.beanToHmap(menuVO).toString());
 		
@@ -249,8 +302,9 @@ public class MenuCont {
 		if(menuVO.getUser_code() == null || "".equals(menuVO.getUser_code())) {
 			rsltMap.put("msg", "사용자 코드 정보가 없습니다.");
 			rsltMap.put("val", cnt);
-			rsltVO.setResult(false);
 			rsltVO.setData(rsltMap);
+			rsltVO.setResult(false);
+			res.setStatus(400);
 			return rsltVO;
 		}
 		
@@ -270,6 +324,8 @@ public class MenuCont {
 			rsltMap.put("msg", e.getMessage());
 			rsltMap.put("val", cnt);
 			rsltVO.setStatus(400);
+			rsltVO.setResult(false);
+			res.setStatus(400);
 		}
 		
 		rsltVO.setData(rsltMap);
@@ -299,7 +355,7 @@ public class MenuCont {
 				byte[] base64 = Base64.encodeBase64(bArr);
 				
 				if(base64 != null){
-					map.put("user_img_str", (new String(base64, "UTF-8")));
+					map.put("user_img_str", ("data:image/jpeg;base64," + new String(base64, "UTF-8")));
 				}
 				
 				rsltList.add(map);
@@ -311,6 +367,7 @@ public class MenuCont {
 		} catch(Exception e) {
 			// TODO: handle exception
 			e.printStackTrace();
+			res.setStatus(400);
 		}
 		
 		return list;
@@ -322,7 +379,7 @@ public class MenuCont {
 					+ "\n 1. family_user_code"
 					+ "<br>		- (필수)"
 					+ "\n 2. family_relation"
-					+ "<br>		- (선택)")
+					+ "<br>		- String 30자 제한 (선택)")
 	@PostMapping(value = "insertUserFamilyMapp/{user_code}.do")
 	public @ResponseBody ResponseVO insertUserFamilyMapp(
 			HttpServletRequest req,
@@ -348,7 +405,9 @@ public class MenuCont {
 			// TODO: handle exception
 			rslt.put("msg", e.getMessage());
 			rslt.put("cnt", cnt);
+			rsltVO.setResult(false);
 			rsltVO.setStatus(400);
+			res.setStatus(400);
 		}
 		
 		rsltVO.setData(rslt);
@@ -357,10 +416,91 @@ public class MenuCont {
 	}
 	
 	
+	@ApiOperation(value = "회원가입(직접 등록하기)"
+			, notes = "회원가입(직접 등록하기)"
+					+ "\n 1. user_nm"
+					+ "<br> 	- 필수값"
+					+ "\n 2. user_gender"
+					+ "<br> 	- 필수값(F, M)"
+					+ "\n 3. user_birth"
+					+ "<br> 	- 필수값(yyyyMMdd)"
+					+ "\n 4. img_file"
+					+ "<br> 	- 필수값"
+			)
+	@PostMapping(value = "insertDirectUserInfo.do")
+	public @ResponseBody ResponseVO insertDirectUserInfo(	
+			HttpServletRequest req,
+			HttpServletResponse res,
+			@RequestParam(value = "img_file", required = false) MultipartFile img_file,
+			UserInfoVO userVO) {
+		
+		logger.info("■■■■■■ insertDirectUserInfo / userVO : {}", userVO.beanToHmap(userVO).toString());
+		
+		ResponseVO rsltVO = new ResponseVO();
+		Map<String, Object> rslt = new HashMap<String, Object>();
+		int cnt = -1;
+		
+		try {
+			String gen_user_id = jwtUtil.getLoginIdbyToken(req);
+			
+			LoginVO loginVO = new LoginVO();
+			loginVO.setUser_id(userVO.getUser_id());
+			
+			userVO.setUser_pwd("0000");
+			
+			String userSalt = SHA512.getSalt();
+			String encPwd = SHA512.sha256(userVO.getUser_pwd(), userSalt);
+			userVO.setUser_pwd(encPwd);
+			userVO.setUser_salt(userSalt);
+			
+			byte[] b_img_file;
+			
+			if(img_file != null || "".equals(img_file)) {
+				b_img_file = img_file.getBytes();
+				userVO.setImg_file_byte(b_img_file);
+			}
+			
+			String user_id = userDAO.getGenUserCode();
+			
+			userVO.setUser_code(user_id);
+			userVO.setUser_id(user_id);
+			userVO.setGen_by(gen_user_id);
+			
+			cnt = userDAO.insertDirectUserInfo(userVO);
+			cnt = cnt > 0 ? userDAO.insertUserHst(userVO) : cnt; 
+			
+			if(cnt > 0){
+				Map<String, Object> userInfo = userDAO.getUserInfo(userVO);
+				
+				MenuVO menuVO = new MenuVO();
+				
+				menuVO.setUser_code(user_id);
+				menuVO.setFamily_user_code(userInfo.get("user_code").toString());
+				menuVO.setFamily_relation("직접 등록");
+				
+				menuDAO.insertUserFamilyMapp(menuVO);
+			}
+			
+			rslt.put("cnt", cnt);
+			rslt.put("msg", "SUCCESS");
+				
+		} catch (Exception e) {
+			// TODO: handle exception
+			rslt.put("msg", e.getMessage());
+			rslt.put("cnt", cnt);
+			rsltVO.setResult(false);
+			rsltVO.setStatus(400);
+			res.setStatus(400);
+		}
+		
+		return rsltVO;
+	}
+	
+	
 	@ApiOperation(value = "사용자 가족관계 삭제"
 			, notes = "사용자 가족관계 삭제"
 					+ "\n 1. family_seq"
-					+ "<br> 	- (필수)")
+					+ "<br> 	- 사용자 가족관계 조회(getIndUserFamilyList)에서 받는 값(필수)")
 	@PostMapping(value = "deleteUserFamilyMapp/{user_code}.do")
 	public @ResponseBody ResponseVO updateUserFamilyMapp(
 			HttpServletRequest req,
@@ -385,7 +525,9 @@ public class MenuCont {
 			// TODO: handle exception
 			rslt.put("msg", e.getMessage());
 			rslt.put("cnt", cnt);
+			rsltVO.setResult(false);
 			rsltVO.setStatus(400);
+			res.setStatus(400);
 		}
 	
 		rsltVO.setData(rslt);

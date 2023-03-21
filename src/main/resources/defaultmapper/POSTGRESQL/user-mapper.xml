@@ -177,7 +177,8 @@
 			naver_yn,
 			user_img,
 			user_gender,
-			user_birth
+			user_birth,
+			user_salt
 		) values (
 			#{user_id},
 			#{user_nm},
@@ -193,7 +194,8 @@
 			#{naver_yn},
 			#{img_file_byte},
 			#{user_gender},
-			#{user_birth}
+			#{user_birth},
+			#{user_salt}
 		)
 	</insert>
 	
@@ -231,7 +233,8 @@
 				  , last_login
 				  , refresh_token
 				  , user_gender
-				  , user_birth)
+				  , user_birth
+				  , user_salt)
 			(SELECT user_id
 				  , user_nm
 				  , user_pwd
@@ -255,9 +258,82 @@
 				  , refresh_token
 				  , user_gender
 				  , user_birth
+				  , user_salt
 			   FROM t_user_info
 			  WHERE user_code = #{user_code})
 	</insert>
+	
+	
+	<!-- Token By 유저 정보 조회 -->
+	<select id="getTokenByUserInfo" parameterType="userInfoVO" resultType="hmap">
+		SELECT t1.user_type
+			 , t1.user_code
+			 , t1.user_id
+			 , t1.use_yn
+			 , t2.cd_val AS use_yn_nm
+			 , t1.user_nm
+			 , t1.user_gender
+			 , t3.cd_val AS user_gender_nm
+			 , t1.user_birth
+		  FROM t_user_info t1
+	INNER JOIN t_cm_cd t2
+			ON t1.use_yn = t2.cd
+		   AND t2.cat_cd = 'USER_USE_YN'
+	INNER JOIN t_cm_cd t3
+			ON t1.user_gender = t3.cd
+		   AND t3.cat_cd = 'USER_GENDER'
+		 WHERE 1=1
+		   AND t1.user_id = #{user_id}
+	</select>
+	
+	
+	<!-- 회원가입(유저 직접 등록 / 간이 등록) -->
+	<insert id="insertDirectUserInfo" parameterType="userInfoVO">
+		INSERT INTO t_user_info (
+			user_id,
+			user_nm,
+			user_pwd,
+			user_type,
+			user_email,
+			use_yn,
+			gen_by,
+			gen_dt,
+			user_code,
+			user_img,
+			user_gender,
+			user_birth,
+			user_salt
+		) values (
+			#{user_id},
+			#{user_nm},
+			#{user_pwd},
+			'USER',
+			#{user_id},
+			'Y'::bpchar,
+			#{gen_by},
+			now(),
+			#{user_code},
+			#{img_file_byte},
+			#{user_gender},
+			#{user_birth},
+			#{user_salt}
+		)
+	</insert>
+	
+	
+	<select id="getUserInfo" parameterType="userInfoVO" resultType="hmap">
+		SELECT t1.user_id
+			 , t1.user_nm
+			 , t1.user_pwd
+			 , t1.user_code
+			 , t1.user_type
+			 , t1.user_salt
+			 , t1.refresh_token
+		  FROM t_user_info  t1
+		 WHERE 1=1
+		   AND t1.use_yn = 'Y'
+		   AND t1.user_id = #{gen_by}
+	</select>
 	
 	
 </mapper>
