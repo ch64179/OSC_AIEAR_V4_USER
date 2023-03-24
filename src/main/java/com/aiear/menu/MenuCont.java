@@ -180,9 +180,9 @@ public class MenuCont {
 	public @ResponseBody ResponseVO updateUserNm(
 			HttpServletRequest req,
 			HttpServletResponse res,
-			@PathVariable String user_code) {
+			@PathVariable String user_code,
+			@RequestBody MenuVO menuVO) {
 		
-		MenuVO menuVO = new MenuVO();
 		menuVO.setUser_code(user_code);
 		
 		logger.info("■■■■■■ updateUserNm / menuVO : {}", menuVO.beanToHmap(menuVO).toString());

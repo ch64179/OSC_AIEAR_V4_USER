@@ -264,8 +264,6 @@ public class LoginCont {
 			, notes = "임시 비밀번호 발급"
 					+ "\n 1. user_id"
 					+ "<br>		- 필수값"
-					+ "\n 1. mobile_tel_no"
-					+ "<br> 	- 필수값"
 			)
 	@PostMapping(value = "searchPwdInfo.do")
 	public @ResponseBody ResponseVO searchPwdInfo(
@@ -302,20 +300,20 @@ public class LoginCont {
 				//	2. SMS 전송 및 이력 적재 (임시로 COOLSMS 테스트 계정으로 진행)
 				String msg = "[비밀번호 변경] 임시 비밀번호 생성 완료 : " + rndPwd;
 				
-				SMTPVO smtpVO = new SMTPVO();
+//				SMTPVO smtpVO = new SMTPVO();
+//				
+//				smtpVO.setFrom_email_addr(loginVO.getUser_id());
+//				smtpVO.setTo_email_addr(GMAIL_USER_NAME);
+//				
+//				smtpVO.setText(smtpUtil.smtpText(srchIdInfo.get("user_nm").toString(), rndPwd));
+//				
+//				Map<String, Object> smtpRslt = smtpUtil.sendSimpleMessage(smtpVO.getFrom_email_addr(), smtpVO.getSubject(), smtpVO.getText());
+//				
+//				smtpVO.setSmtp_rslt(smtpRslt.get("result").toString());
 				
-				smtpVO.setFrom_email_addr(loginVO.getUser_id());
-				smtpVO.setTo_email_addr(GMAIL_USER_NAME);
+//				logger.info("■■■■■■ smtpVO : {}", smtpVO.toString());
 				
-				smtpVO.setText(smtpUtil.smtpText(srchIdInfo.get("user_nm").toString(), rndPwd));
-				
-				Map<String, Object> smtpRslt = smtpUtil.sendSimpleMessage(smtpVO.getFrom_email_addr(), smtpVO.getSubject(), smtpVO.getText());
-				
-				smtpVO.setSmtp_rslt(smtpRslt.get("result").toString());
-				
-				logger.info("■■■■■■ smtpVO : {}", smtpVO.toString());
-				
-				smtpDAO.insertSMTPSendHst(smtpVO);
+//				smtpDAO.insertSMTPSendHst(smtpVO);
 				
 				// 3. 임시 비밀번호로 업데이트
 				//		+ 비밀번호 암호화 처리
@@ -393,7 +391,7 @@ public class LoginCont {
 			Map<String, Object> dupCnt = loginDAO.normalLoginIdProcess(loginVO);
 			if(dupCnt != null) {
 				rslt.put("cnt", cnt);
-				rslt.put("msg", "존재하는 계정입니다.");
+				rsltVO.setMessage("존재하는 계정입니다.");
 				rsltVO.setResult(false);
 				rsltVO.setStatus(400);
 				res.setStatus(400);
