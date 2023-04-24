@@ -70,6 +70,17 @@ public interface MenuDAO {
 	
 	/**
 	 * Description	: 
+	 * @method		: updateUserIcon
+	 * @author		: pcw
+	 * @date		: 2023. 4. 23.
+	 * @param vo
+	 * @return
+	 */
+	public int updateUserIcon(MenuVO vo);
+	
+	
+	/**
+	 * Description	: 
 	 * @method		: deleteUserAction
 	 * @author		: pcw
 	 * @date		: 2022. 12. 24.
@@ -112,4 +123,13 @@ public interface MenuDAO {
 	public int deleteUserFamilyMapp(MenuVO vo);
 	
 	
+	/**
+	 * Description	: 
+	 * @method		: updateUserChngPwd
+	 * @author		: pcw
+	 * @date		: 2023. 3. 24.
+	 * @param vo
+	 * @return
+	 */
+	public int updateUserChngPwd(MenuVO vo);
 }

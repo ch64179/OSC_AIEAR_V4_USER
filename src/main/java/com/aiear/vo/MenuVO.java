@@ -77,7 +77,13 @@ public class MenuVO extends ResponseVO {
 	
 	@ApiParam(value = "유저 생일")
 	private String user_birth;
+
+	@ApiParam(value = "아이콘 타입")
+	private String icon_type;
 	
+	private String user_salt;
+	
+	private String temp_pwd;
 	
 	//이미지 삽임 전용
 	private byte[] img_file_byte;

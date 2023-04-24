@@ -20,6 +20,22 @@
 		   AND t1.user_id = #{user_id}
 	</select>
 	
+	<!-- Social 로그인 (UUID 체크) -->
+	<select id="socialLoginProcess" parameterType="userInfoVO" resultType="hmap">
+		SELECT t1.user_id
+			 , t1.user_nm
+			 , t1.user_pwd
+			 , t1.user_type
+			 , t1.user_salt
+			 , t1.user_birth
+			 , t1.user_gender
+			 , t1.refresh_token
+		  FROM t_user_info  t1
+		 WHERE 1=1
+		   AND t1.use_yn = 'Y'
+		   AND t1.uuid = #{uuid} 
+	</select>
+	
 	<!-- 로그인 (PWD 체크) -->
 	<select id="normalLoginPwdProcess" parameterType="userInfoVO" resultType="hmap">
 		SELECT t1.user_id
@@ -36,12 +52,38 @@
 	INNER JOIN t_cm_cd t2
 			ON t1.use_yn = t2.cd
 		   AND t2.cat_cd = 'USER_USE_YN'
-	INNER JOIN t_cm_cd t3
+	LEFT OUTER JOIN t_cm_cd t3
 			ON t1.user_gender = t3.cd
 		   AND t3.cat_cd = 'USER_GENDER'
 		 WHERE 1=1
 		   AND t1.use_yn = 'Y'
 		   AND t1.user_id = #{user_id}
+		   AND t1.user_pwd = #{user_pwd}
+	</select>
+	
+	
+	<!-- Social 로그인 (PWD 체크) -->
+	<select id="socialLoginPwdProcess" parameterType="userInfoVO" resultType="hmap">
+		SELECT t1.user_id
+			 , t1.user_code
+			 , t1.user_nm
+			 , t1.user_pwd
+			 , t1.user_type
+			 , t1.use_yn
+			 , t2.cd_val AS use_yn_nm
+			 , t1.user_birth
+			 , t1.user_gender
+			 , t3.cd_val AS user_gender_nm
+		  FROM t_user_info t1
+	INNER JOIN t_cm_cd t2
+			ON t1.use_yn = t2.cd
+		   AND t2.cat_cd = 'USER_USE_YN'
+	LEFT OUTER JOIN t_cm_cd t3
+			ON t1.user_gender = t3.cd
+		   AND t3.cat_cd = 'USER_GENDER'
+		 WHERE 1=1
+		   AND t1.use_yn = 'Y'
+		   AND t1.uuid = #{uuid}
 		   AND t1.user_pwd = #{user_pwd}
 	</select>
 		
@@ -86,10 +128,10 @@
 	
 	
 	<update id="updateLoginInfo" parameterType="userInfoVO">
-		UPDATE t_hospital_info
+		UPDATE t_user_info
 		   SET last_login = now()
 		     , refresh_token = #{refresh_token}
-		 WHERE hospital_id = #{user_id}
+		 WHERE user_id = #{user_id}
 	</update>
 	
 

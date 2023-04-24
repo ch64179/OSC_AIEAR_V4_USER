@@ -153,4 +153,26 @@ public interface UserMngDAO {
 	 * @return
 	 */
 	public Map<String, Object> getUserInfo(UserInfoVO vo);
+	
+	
+	/**
+	 * Description	: 
+	 * @method		: getDupleCheck
+	 * @author		: pcw
+	 * @date		: 2023. 3. 24.
+	 * @param vo
+	 * @return
+	 */
+	public int getDupleCheck(UserInfoVO vo);
+	
+	
+	/**
+	 * Description	: 
+	 * @method		: insertSocialUserInfo
+	 * @author		: pcw
+	 * @date		: 2023. 3. 31.
+	 * @param vo
+	 * @return
+	 */
+	public int insertSocialUserInfo(UserInfoVO vo);
 }

@@ -37,7 +37,8 @@
 			gen_by,
 			gen_dt,
 			ear_pos,
-			img_file
+			img_file,
+			result_code
 		) values (
 			${api_call_log_seq},
 			#{user_code},
@@ -50,7 +51,8 @@
 			#{gen_user_id},
 			now(),
 			#{ear_pos},
-			#{param_img}
+			#{param_img},
+			#{result_code}
 		)
 	</insert>
 	

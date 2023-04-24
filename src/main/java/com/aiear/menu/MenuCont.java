@@ -32,6 +32,7 @@ import com.aiear.dao.CommonDAO;
 import com.aiear.dao.LoginDAO;
 import com.aiear.dao.MenuDAO;
 import com.aiear.dao.UserMngDAO;
+import com.aiear.util.LoginUtil;
 import com.aiear.util.SHA512;
 import com.aiear.vo.LoginVO;
 import com.aiear.vo.MenuVO;
@@ -91,6 +92,9 @@ public class MenuCont {
 					userInfo.put("hospital_img_base64", base64);
 					userInfo.put("user_img_str", ("data:image/jpeg;base64," + new String(base64, "UTF-8")));
 				} 
+			} else {
+				userInfo.put("user_img_str", null);
+				userInfo.put("user_img", null);
 			}
 			
 		} catch (UnsupportedEncodingException e) {
@@ -282,6 +286,142 @@ public class MenuCont {
 	}
 	
 	
+	@ApiOperation(value = "사용자 아이콘 업데이트"
+			, notes = "사용자 아이콘 업데이트"
+					+ "\n 1. icon_type"
+					+ "<br>		- ICON01 ~ ICON08(필수)")
+	@PostMapping(value = "updateUserIcon/{user_code}.do")
+	public @ResponseBody ResponseVO updateUserIcon(
+			HttpServletRequest req,
+			HttpServletResponse res,
+			@PathVariable String user_code,
+			@RequestBody MenuVO menuVO) {
+		
+		menuVO.setUser_code(user_code);
+		
+		logger.info("■■■■■■ updateUserInfo / menuVO : {}", menuVO.beanToHmap(menuVO).toString());
+	
+		ResponseVO rsltVO = new ResponseVO();
+		Map<String, Object> rslt = new HashMap<String, Object>();
+		int cnt = -1;
+		
+		if(menuVO.getUser_code() == null || "".equals(menuVO.getUser_code())) {
+			rslt.put("msg", "사용자 코드 정보가 없습니다.");
+			rslt.put("val", cnt);
+			rsltVO.setResult(false);
+			rsltVO.setData(rslt);
+			res.setStatus(400);
+			return rsltVO;
+		}
+		
+		try {
+			cnt = menuDAO.updateUserIcon(menuVO);
+			
+			UserInfoVO userVO = new UserInfoVO();
+			userVO.setUser_code(menuVO.getUser_code());
+			cnt = cnt > 0 ? userDAO.insertUserHst(userVO) : cnt; 
+			
+			rslt.put("cnt", cnt);
+			rslt.put("msg", cnt > 0 ? "SUCCESS" : "FAIL");
+			rsltVO.setResult(cnt > 0 ? true : false);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			rslt.put("msg", e.getMessage());
+			rslt.put("cnt", cnt);
+			rsltVO.setResult(false);
+			rsltVO.setStatus(400);
+			res.setStatus(400);
+		}
+		
+		rsltVO.setData(rslt);
+		
+		return rsltVO;
+	}
+	
+	
+	@ApiOperation(value = "비밀번호 변경"
+			, notes = "비밀번호 변경"
+					+ "\n 1. user_code"
+					+ "<br>		- 필수값"
+					+ "\n 1. user_pwd"
+					+ "<br>		- 필수값"
+			)
+	@PostMapping(value = "updatePwdInfo.do")
+	public @ResponseBody ResponseVO updatePwdInfo(
+			HttpServletRequest req,
+			HttpServletResponse res,
+			@RequestBody MenuVO menuVO) {
+		
+		logger.info("■■■■■■ updatePwdInfo / loginVO : {}", menuVO.beanToHmap(menuVO).toString());
+		
+		ResponseVO resVO = new ResponseVO();
+		
+		try {
+			
+			if(menuVO.getUser_code() == null || "".equals(menuVO.getUser_code())){
+				resVO.setMessage("유저 코드를 입력해 주세요.");
+				resVO.setResult(false);
+				resVO.setStatus(400);
+				res.setStatus(400);
+				return resVO;
+			}
+			
+			if(menuVO.getUser_pwd() == null || "".equals(menuVO.getUser_pwd())){
+				resVO.setMessage("비밀번호를 입력해 주세요.");
+				resVO.setResult(false);
+				resVO.setStatus(400);
+				res.setStatus(400);
+				return resVO;
+			}
+			
+			Map<String, Object> srchIdInfo = menuDAO.getUserDetailInfo(menuVO);
+			
+			if(srchIdInfo == null){
+				resVO.setMessage(menuVO.getUser_code() + " / 일치하는 계정이 없습니다.");
+				resVO.setResult(false);
+				resVO.setStatus(400);
+			} else {
+			
+				// 3. 임시 비밀번호로 업데이트
+				//		+ 비밀번호 암호화 처리
+				String userSalt = SHA512.getSalt();
+				String encPwd = SHA512.sha256(menuVO.getUser_pwd(), userSalt);
+				menuVO.setTemp_pwd(encPwd);
+				menuVO.setUser_salt(userSalt);
+				
+				
+				Integer rslt = menuDAO.updateUserChngPwd(menuVO);
+				
+				if(rslt > 0){
+					UserInfoVO userVO = new UserInfoVO();
+					userVO.setUser_id(menuVO.getUser_id());
+					userVO.setUser_code(srchIdInfo.get("user_code").toString());
+					
+					userDAO.insertUserHst(userVO);
+					
+					resVO.setData(srchIdInfo);
+					resVO.setMessage("비밀번호 변경 성공");
+					resVO.setResult(true);
+				} else {
+					resVO.setMessage("비밀번호 변경 실패");
+					resVO.setResult(false);
+					resVO.setStatus(400);
+					res.setStatus(400);
+				}
+			}
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+			resVO.setStatus(400);
+			resVO.setMessage("비밀번호 변경 오류");
+			res.setStatus(400);
+		}
+		
+		return resVO;
+	}
+	
+	
 	@ApiOperation(value = "사용자 탈퇴 처리"
 			, notes = "사용자 탈퇴 처리")
 	@PostMapping(value = "deleteUserAction/{user_code}.do")
@@ -424,7 +564,9 @@ public class MenuCont {
 					+ "<br> 	- 필수값(F, M)"
 					+ "\n 3. user_birth"
 					+ "<br> 	- 필수값(yyyyMMdd)"
-					+ "\n 4. img_file"
+//					+ "\n 4. img_file"
+//					+ "<br> 	- 필수값"
+					+ "\n 4. icon_type"
 					+ "<br> 	- 필수값"
 			)
 	@PostMapping(value = "insertDirectUserInfo.do")
@@ -474,8 +616,8 @@ public class MenuCont {
 				
 				MenuVO menuVO = new MenuVO();
 				
-				menuVO.setUser_code(user_id);
-				menuVO.setFamily_user_code(userInfo.get("user_code").toString());
+				menuVO.setUser_code(userInfo.get("user_code").toString());
+				menuVO.setFamily_user_code(user_id);
 				menuVO.setFamily_relation("직접 등록");
 				
 				menuDAO.insertUserFamilyMapp(menuVO);

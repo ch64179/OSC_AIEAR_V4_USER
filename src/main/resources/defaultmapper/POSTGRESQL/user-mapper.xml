@@ -178,7 +178,8 @@
 			user_img,
 			user_gender,
 			user_birth,
-			user_salt
+			user_salt,
+			icon_type
 		) values (
 			#{user_id},
 			#{user_nm},
@@ -195,7 +196,51 @@
 			#{img_file_byte},
 			#{user_gender},
 			#{user_birth},
-			#{user_salt}
+			#{user_salt},
+			UPPER(#{icon_type})
+		)
+	</insert>
+	
+	<!-- Social 회원가입(유저 정보 등록) -->
+	<insert id="insertSocialUserInfo" parameterType="userInfoVO">
+		INSERT INTO t_user_info (
+			user_id,
+			user_nm,
+			user_pwd,
+			user_type,
+			user_email,
+			mobile_tel_no,
+			use_yn,
+			gen_by,
+			gen_dt,
+			user_code,
+			kakao_yn,
+			naver_yn,
+			user_img,
+			user_gender,
+			user_birth,
+			user_salt,
+			uuid,
+			icon_type
+		) values (
+			#{user_id},
+			#{user_nm},
+			#{user_pwd},
+			'USER',
+			#{user_id},
+			#{mobile_tel_no},
+			'Y'::bpchar,
+			#{user_id},
+			now(),
+			#{user_code},
+			#{kakao_yn},
+			#{naver_yn},
+			#{img_file_byte},
+			#{user_gender},
+			#{user_birth},
+			#{user_salt},
+			#{uuid},
+			UPPER(#{icon_type})
 		)
 	</insert>
 	
@@ -234,7 +279,8 @@
 				  , refresh_token
 				  , user_gender
 				  , user_birth
-				  , user_salt)
+				  , user_salt
+				  , uuid)
 			(SELECT user_id
 				  , user_nm
 				  , user_pwd
@@ -259,6 +305,7 @@
 				  , user_gender
 				  , user_birth
 				  , user_salt
+				  , uuid
 			   FROM t_user_info
 			  WHERE user_code = #{user_code})
 	</insert>
@@ -275,6 +322,7 @@
 			 , t1.user_gender
 			 , t3.cd_val AS user_gender_nm
 			 , t1.user_birth
+			 , t1.icon_type
 		  FROM t_user_info t1
 	INNER JOIN t_cm_cd t2
 			ON t1.use_yn = t2.cd
@@ -302,7 +350,8 @@
 			user_img,
 			user_gender,
 			user_birth,
-			user_salt
+			user_salt,
+			icon_type
 		) values (
 			#{user_id},
 			#{user_nm},
@@ -316,7 +365,8 @@
 			#{img_file_byte},
 			#{user_gender},
 			#{user_birth},
-			#{user_salt}
+			#{user_salt},
+			UPPER(#{icon_type})
 		)
 	</insert>
 	
@@ -333,6 +383,14 @@
 		 WHERE 1=1
 		   AND t1.use_yn = 'Y'
 		   AND t1.user_id = #{gen_by}
+	</select>
+	
+	
+	<!-- 유저 ID 중복체크 -->
+	<select id="getDupleCheck" parameterType="userInfoVO" resultType="int">
+		SELECT COUNT(*)
+		  FROM t_user_info
+		 WHERE user_id = #{user_id} 
 	</select>
 	
 	

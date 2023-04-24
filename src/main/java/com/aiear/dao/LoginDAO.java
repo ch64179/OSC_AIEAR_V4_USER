@@ -67,4 +67,25 @@ public interface LoginDAO {
 	 */
 	public int updateLoginInfo(LoginVO vo);
 
+	
+	/**
+	 * Description	: 
+	 * @method		: socialLoginProcess
+	 * @author		: pcw
+	 * @date		: 2023. 3. 31.
+	 * @param vo
+	 * @return
+	 */
+	public Map<String, Object> socialLoginProcess(LoginVO vo);
+	
+	
+	/**
+	 * Description	: 
+	 * @method		: socialLoginPwdProcess
+	 * @author		: pcw
+	 * @date		: 2023. 3. 31.
+	 * @param vo
+	 * @return
+	 */
+	public Map<String, Object> socialLoginPwdProcess(LoginVO vo);
 }

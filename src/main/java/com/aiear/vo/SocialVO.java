@@ -12,11 +12,11 @@ import java.util.HashMap;
 import lombok.Data;
 
 @Data
-public class LoginVO {
+public class SocialVO {
 	
 	@ApiModelProperty(
-			name = "LoginVO",
-			example = "LoginVO"
+			name = "SocialVO",
+			example = "SocialVO"
 	)
 	
 	@ApiParam(value = "유저명")
@@ -40,15 +40,9 @@ public class LoginVO {
 	@ApiParam(value = "Refresh Token")
 	private String refresh_token;
 	
-	@ApiParam(value = "uuid")
-	private String uuid;
-	
-	@ApiParam(value = "social_type")
-	private String social_type;
-	
 	private String user_salt;		//비밀번호 암호화 SALT 20자리
 	
-	public HashMap<String, Object> beanToHmap(LoginVO vo) {
+	public HashMap<String, Object> beanToHmap(SocialVO vo) {
 		HashMap<String, Object> beanAsMap = new HashMap<String, Object>();
 		
 		try {

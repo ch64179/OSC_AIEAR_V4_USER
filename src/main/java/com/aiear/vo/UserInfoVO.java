@@ -78,6 +78,12 @@ public class UserInfoVO extends ResponseVO {
 	@ApiParam(value = "유저 생일")
 	private String user_birth;
 	
+	@ApiParam(value = "UUID")
+	private String uuid;
+	
+	@ApiParam(value = "아이콘 타입")
+	private String icon_type;
+	
 	//유저 SALT 값
 	private String user_salt;
 	

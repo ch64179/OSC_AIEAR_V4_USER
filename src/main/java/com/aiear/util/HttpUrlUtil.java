@@ -469,52 +469,52 @@ public class HttpUrlUtil {
 	 * @param hMap
 	 * @return
 	 */
-//	public static Map<String, Object> getHttpBodyDataToMapJsonArr(String _url, String _method, org.json.simple.JSONArray jsonArr) {
-//		String result = "";
-//		Map<String, Object> rsltMap = new HashMap<String, Object>();
-//		
-//		try {
-//			
-//			URL url = new URL(_url);
-//			HttpURLConnection http = (HttpURLConnection) url.openConnection();
-//
-//			http.setDefaultUseCaches(false);
-//			http.setDoInput(true);
-//			http.setDoOutput(true);
-//			http.setRequestMethod(_method);
-//			
-//			http.setRequestProperty("content-type",	"application/json");
-//			
-//			OutputStreamWriter outStream = new OutputStreamWriter(http.getOutputStream(), "UTF-8");
-//			PrintWriter writer = new PrintWriter(outStream);
-//			writer.write(jsonArr.toString());
-//			writer.flush();
-//
-//			InputStreamReader tmp = new InputStreamReader(http.getInputStream(), "UTF-8");
-//			BufferedReader reader = new BufferedReader(tmp);
-//			StringBuilder builder = new StringBuilder();
-//			String str;
-//			while ((str = reader.readLine()) != null) {
-//				builder.append(str + "\n");
-//			}
-//			result = builder.toString();
-//			
-//			ObjectMapper mapper = new ObjectMapper();
-//			rsltMap = mapper.readValue(result, Map.class);
-//			
-//			int rsltCode = http.getResponseCode();
-//			rsltMap.put("rsltCode", rsltCode);
-//			
-//			System.out.println("■■■■■■ HTTP RESULT CODE : " + rsltCode);
-//
-//			http.disconnect();
-//			
-//		} catch (MalformedURLException e) {
-//
-//		} catch (IOException e) {
-//		}
-//
-//		return rsltMap;
-//	}
+	public static Map<String, Object> getHttpBodyDataToMapJsonArr(String _url, String _method, org.json.simple.JSONArray jsonArr) {
+		String result = "";
+		Map<String, Object> rsltMap = new HashMap<String, Object>();
+		
+		try {
+			
+			URL url = new URL(_url);
+			HttpURLConnection http = (HttpURLConnection) url.openConnection();
+
+			http.setDefaultUseCaches(false);
+			http.setDoInput(true);
+			http.setDoOutput(true);
+			http.setRequestMethod(_method);
+			
+			http.setRequestProperty("content-type",	"application/json");
+			
+			OutputStreamWriter outStream = new OutputStreamWriter(http.getOutputStream(), "UTF-8");
+			PrintWriter writer = new PrintWriter(outStream);
+			writer.write(jsonArr.toString());
+			writer.flush();
+
+			InputStreamReader tmp = new InputStreamReader(http.getInputStream(), "UTF-8");
+			BufferedReader reader = new BufferedReader(tmp);
+			StringBuilder builder = new StringBuilder();
+			String str;
+			while ((str = reader.readLine()) != null) {
+				builder.append(str + "\n");
+			}
+			result = builder.toString();
+			
+			ObjectMapper mapper = new ObjectMapper();
+			rsltMap = mapper.readValue(result, Map.class);
+			
+			int rsltCode = http.getResponseCode();
+			rsltMap.put("rsltCode", rsltCode);
+			
+			System.out.println("■■■■■■ HTTP RESULT CODE : " + rsltCode);
+
+			http.disconnect();
+			
+		} catch (MalformedURLException e) {
+
+		} catch (IOException e) {
+		}
+
+		return rsltMap;
+	}
 	
 }

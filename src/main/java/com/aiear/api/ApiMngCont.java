@@ -5,8 +5,12 @@ import io.swagger.annotations.ApiOperation;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
@@ -34,8 +38,10 @@ import com.aiear.config.session.JwtUtil;
 import com.aiear.dao.ApiMngDAO;
 import com.aiear.dao.CommonDAO;
 import com.aiear.util.HttpUrlUtil;
+import com.aiear.vo.CommonCdVO;
 import com.aiear.vo.DiagnosisVO;
 import com.aiear.vo.ResponseVO;
+import com.google.gson.JsonObject;
 
 
 @RestController
@@ -155,7 +161,33 @@ public class ApiMngCont {
 			
 			// AI 추론 귀검사 결과 저장
 			if(aiInferRslt){
+				LinkedHashMap<String, Object> rsltMap = (LinkedHashMap<String, Object>) result.get("result");
+				
+				 // Max
+		        Entry<String, Object> maxEntry = null;
+		 
+		        // Iterator
+		        Set<Entry<String, Object>> entrySet = rsltMap.entrySet();
+		        for(Entry<String, Object> entry : entrySet) {
+		            if (maxEntry == null || (Double) entry.getValue() > (Double) maxEntry.getValue()) {
+		                maxEntry = entry;
+		            }
+		        }
+		        
+		        callMap.put("result_code", maxEntry.getKey());
+		        
 				cnt = apiMngDAO.insertInferenceInfo(callMap);
+				
+				CommonCdVO cdVO = new CommonCdVO();
+				
+				cdVO.setCat_cd("INFERENCE_RSLT");
+				cdVO.setCd(maxEntry.getKey().toUpperCase());
+				
+				List<CommonCdVO> msgCdVO = commonDAO.getCommonCodeList(cdVO);
+				
+				result.put("result_type", maxEntry.getKey().toUpperCase());
+				result.put("msg", msgCdVO.get(0).getCd_val());
+				
 				rsltVO.setResult(true);
 			} else {
 				rsltVO.setMessage("AI 추론 서비스 통신 실패");
@@ -183,7 +215,7 @@ public class ApiMngCont {
 	
 	@ApiOperation(value = ""
 			, notes = "추론 서버 API Inference (귀 이미지 분석)"
-					+ "\n 1. img_file"
+					+ "\n 1. img_files"
 					+ "<br> 	- List<MultipartFile> 필수값"
 					+ "\n 2. channel"
 					+ "<br>		- 필수값(Channel값 모를경우 '3'으로 입력)"
@@ -233,7 +265,7 @@ public class ApiMngCont {
 			String url = AIEAR_API_REST_INFERENCES_URL;
 			String method = "POST";
 			
-//			result = HttpUrlUtil.getHttpBodyDataToMapJsonArr(url, method, jsonArr);
+			result = HttpUrlUtil.getHttpBodyDataToMapJsonArr(url, method, jsonArr);
 			
 			//Call Log 적재
 			Map<String, Object> callMap = new HashMap<String, Object>();
@@ -278,7 +310,33 @@ public class ApiMngCont {
 			
 			// AI 추론 귀검사 결과 저장
 			if(aiInferRslt){
+				LinkedHashMap<String, Object> rsltMap = (LinkedHashMap<String, Object>) result.get("result");
+				
+				 // Max
+		        Entry<String, Object> maxEntry = null;
+		 
+		        // Iterator
+		        Set<Entry<String, Object>> entrySet = rsltMap.entrySet();
+		        for(Entry<String, Object> entry : entrySet) {
+		            if (maxEntry == null || (Double) entry.getValue() > (Double) maxEntry.getValue()) {
+		                maxEntry = entry;
+		            }
+		        }
+		        
+		        callMap.put("result_code", maxEntry.getKey());
+		        
 				cnt = apiMngDAO.insertInferenceInfo(callMap);
+				
+				CommonCdVO cdVO = new CommonCdVO();
+				
+				cdVO.setCat_cd("INFERENCE_RSLT");
+				cdVO.setCd(maxEntry.getKey().toUpperCase());
+				
+				List<CommonCdVO> msgCdVO = commonDAO.getCommonCodeList(cdVO);
+				
+				result.put("result_type", maxEntry.getKey().toUpperCase());
+				result.put("msg", msgCdVO.get(0).getCd_val());
+				
 				rsltVO.setResult(true);
 			} else {
 				rsltVO.setMessage("AI 추론 서비스 통신 실패");

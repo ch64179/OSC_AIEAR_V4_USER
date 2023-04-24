@@ -199,6 +199,95 @@ public class LoginCont {
 	}
 	
 	
+	@ApiOperation(value = "Social 로그인"
+			, notes = "로그인"
+					+ "\n 1. uuid"
+					+ "<br> 	- 필수값"
+//					+ "\n 2. social_type"
+//					+ "<br> 	- 필수값 / 소셜 Type (카카오:K, Naver:N)"
+//					+ "<br>"
+//					+ "<br>▶ 관리자 구분 : use_type 값이 'ADMIN'일 경우"
+//					+ "<br>▶ 신규구분 : new_yn 값이 'Y'일 경우"
+//					+ "<br>▶ 탈퇴구분 : use_yn 값이 'N'일 경우"
+			)
+	@PostMapping(value = "socialLogin.do")
+	public @ResponseBody ResponseVO socialLogin(
+			HttpServletRequest req,
+			HttpServletResponse res,
+			@RequestBody LoginVO loginVO) {
+	
+	logger.info("■■■■■■ socialLogin / loginVO : {}", loginVO.beanToHmap(loginVO).toString());
+	
+	ResponseVO resVO = new ResponseVO();
+	HttpSession session = req.getSession();
+//	JwtManager jwtManager = new JwtManager();
+	
+	if(loginVO.getUuid() == null || "".equals(loginVO.getUuid())){
+		resVO.setMessage("UUID를 입력해 주세요.");
+		resVO.setResult(false);
+		resVO.setStatus(400);
+		res.setStatus(400);
+		return resVO;
+	}
+	
+	Map<String, Object> idChk = loginDAO.socialLoginProcess(loginVO);
+	
+	if(idChk == null) {
+		resVO.setMessage(loginVO.getUser_id() + " / 일치하는 계정이 없습니다.");
+		resVO.setResult(false);
+		resVO.setStatus(400);
+		res.setStatus(400);
+		return resVO;
+	}
+	
+	//TODO: 로그인 비밀번호 암호화
+	String saltVO = idChk.get("user_salt").toString();
+	String encPwd = SHA512.sha256(loginVO.getUuid(), saltVO);
+	loginVO.setUser_pwd(encPwd);
+	
+	Map<String, Object> pwdChk = loginDAO.socialLoginPwdProcess(loginVO);
+	
+	if(pwdChk == null){
+		resVO.setMessage("비밀번호가 일치하지 않습니다.");
+		resVO.setResult(false);
+		resVO.setStatus(400);
+		res.setStatus(400);
+	} else {
+		String authToken = null;
+		String refreshToken = null;
+		
+		try {
+			AuthRequest authRequest = new AuthRequest();
+			authRequest.setUserId(pwdChk.get("user_id").toString());
+			authRequest.setUserPwd(encPwd);
+			authRequest.setUserType(pwdChk.get("user_type").toString());
+			authToken = generateTokenStr(authRequest);
+			refreshToken = generateRefreshTokenStr(authRequest);
+			
+			pwdChk.put("accessToken", authToken);
+			pwdChk.put("refreshToken", refreshToken);
+			
+			resVO.setMessage(pwdChk.get("user_type") + " 로그인 성공했습니다.");
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			resVO.setStatus(400);
+			resVO.setMessage(pwdChk.get("user_type") + " 일치하는 계정이 없습니다, 토큰 생성에 실패했습니다.");
+			res.setStatus(400);
+		}
+		
+		loginVO.setRefresh_token(refreshToken);
+		loginDAO.updateLoginInfo(loginVO);
+		
+		resVO.setData(pwdChk);
+		resVO.setResult(true);
+	}
+	
+	return resVO;
+}
+	
+	
 	@ApiOperation(value = "토큰 발급"
 			, notes = "토큰 발급"
 					+ "\n 1. userId"
@@ -300,20 +389,20 @@ public class LoginCont {
 				//	2. SMS 전송 및 이력 적재 (임시로 COOLSMS 테스트 계정으로 진행)
 				String msg = "[비밀번호 변경] 임시 비밀번호 생성 완료 : " + rndPwd;
 				
-//				SMTPVO smtpVO = new SMTPVO();
-//				
-//				smtpVO.setFrom_email_addr(loginVO.getUser_id());
-//				smtpVO.setTo_email_addr(GMAIL_USER_NAME);
-//				
-//				smtpVO.setText(smtpUtil.smtpText(srchIdInfo.get("user_nm").toString(), rndPwd));
-//				
-//				Map<String, Object> smtpRslt = smtpUtil.sendSimpleMessage(smtpVO.getFrom_email_addr(), smtpVO.getSubject(), smtpVO.getText());
-//				
-//				smtpVO.setSmtp_rslt(smtpRslt.get("result").toString());
+				SMTPVO smtpVO = new SMTPVO();
 				
-//				logger.info("■■■■■■ smtpVO : {}", smtpVO.toString());
+				smtpVO.setFrom_email_addr(loginVO.getUser_id());
+				smtpVO.setTo_email_addr(GMAIL_USER_NAME);
 				
-//				smtpDAO.insertSMTPSendHst(smtpVO);
+				smtpVO.setText(smtpUtil.smtpText(srchIdInfo.get("user_nm").toString(), rndPwd));
+				
+				Map<String, Object> smtpRslt = smtpUtil.sendSimpleMessage(smtpVO.getFrom_email_addr(), smtpVO.getSubject(), smtpVO.getText());
+				
+				smtpVO.setSmtp_rslt(smtpRslt.get("result").toString());
+				
+				logger.info("■■■■■■ smtpVO : {}", smtpVO.toString());
+				
+				smtpDAO.insertSMTPSendHst(smtpVO);
 				
 				// 3. 임시 비밀번호로 업데이트
 				//		+ 비밀번호 암호화 처리
@@ -360,15 +449,17 @@ public class LoginCont {
 					+ "<br> 	- 필수값"
 					+ "\n 3. user_pwd"
 					+ "<br> 	- 필수값"
-					+ "\n 4. kakao_yn"
-					+ "<br> 	- 선택값(Default : N)"
-					+ "\n 5. naver_yn"
-					+ "<br> 	- 선택값(Default : N)"
-					+ "\n 6. user_gender"
+//					+ "\n 4. kakao_yn"
+//					+ "<br> 	- 선택값(Default : N)"
+//					+ "\n 5. naver_yn"
+//					+ "<br> 	- 선택값(Default : N)"
+					+ "\n 4. user_gender"
 					+ "<br> 	- 선택값(F, M)"
-					+ "\n 7. user_birth"
+					+ "\n 5. user_birth"
 					+ "<br> 	- 선택값(yyyyMMdd)"
-					+ "\n 8. img_file"
+					+ "\n 6. img_file"
+					+ "<br> 	- 선택값"
+					+ "\n 7. icon_type"
 					+ "<br> 	- 선택값"
 			)
 	@PostMapping(value = "insertUserInfo.do")
@@ -430,6 +521,91 @@ public class LoginCont {
 	}
 	
 	
+	@ApiOperation(value = "Social 회원가입"
+			, notes = "Social 회원가입"
+					+ "\n 1. uuid"
+					+ "<br>		- 필수값"
+					+ "\n 2. user_nm"
+					+ "<br> 	- 필수값"
+//					+ "\n 3. user_pwd"
+//					+ "<br> 	- 필수값"
+//					+ "\n 4. kakao_yn"
+//					+ "<br> 	- 선택값(Default : N)"
+//					+ "\n 5. naver_yn"
+//					+ "<br> 	- 선택값(Default : N)"
+					+ "\n 3. user_gender"
+					+ "<br> 	- 선택값(F, M)"
+					+ "\n 4. user_birth"
+					+ "<br> 	- 선택값(yyyyMMdd)"
+//					+ "\n 5. img_file"
+//					+ "<br> 	- 선택값"
+					+ "\n 5. icon_type"
+					+ "<br> 	- 선택값"
+			)
+	@PostMapping(value = "insertSocialUserInfo.do")
+	public @ResponseBody ResponseVO insertSocialUserInfo(	
+			HttpServletRequest req,
+			HttpServletResponse res,
+			@RequestParam(value = "img_file", required = false) MultipartFile img_file,
+			UserInfoVO userVO) {
+		
+		logger.info("■■■■■■ insertSocialUserInfo / userVO : {}", userVO.beanToHmap(userVO).toString());
+		
+		ResponseVO rsltVO = new ResponseVO();
+		Map<String, Object> rslt = new HashMap<String, Object>();
+		int cnt = -1;
+		
+		try {
+			LoginVO loginVO = new LoginVO();
+			loginVO.setUser_id(userVO.getUser_id());
+			
+			Map<String, Object> dupCnt = loginDAO.socialLoginProcess(loginVO);
+			if(dupCnt != null) {
+				rslt.put("cnt", cnt);
+				rsltVO.setMessage("이미 가입되어 있습니다.");
+				rsltVO.setResult(false);
+				rsltVO.setStatus(400);
+				res.setStatus(400);
+			} else {
+				
+				String userSalt = SHA512.getSalt();
+				String encPwd = SHA512.sha256(userVO.getUuid(), userSalt);
+				userVO.setUser_pwd(encPwd);
+				userVO.setUser_salt(userSalt);
+				
+				byte[] b_img_file;
+				
+				if(img_file != null || "".equals(img_file)) {
+					b_img_file = img_file.getBytes();
+					userVO.setImg_file_byte(b_img_file);
+				}
+				
+				String user_code = userDAO.getGenUserCode();
+				
+				userVO.setUser_code(user_code);
+				userVO.setUser_id(userVO.getUuid());
+				
+				cnt = userDAO.insertSocialUserInfo(userVO);
+				cnt = cnt > 0 ? userDAO.insertUserHst(userVO) : cnt; 
+				
+				rslt.put("cnt", cnt);
+				rslt.put("msg", "SUCCESS");	
+				
+				rsltVO.setResult(true);
+			}
+		} catch (Exception e) {
+			// TODO: handle exception
+			rslt.put("msg", e.getMessage());
+			rslt.put("cnt", cnt);
+			rsltVO.setResult(false);
+			rsltVO.setStatus(400);
+			res.setStatus(400);
+		}
+		
+		return rsltVO;
+	}
+	
+	
 	
 	@ApiOperation(value = "토큰 유저정보 조회"
 			, notes = "토큰 유저정보 조회"
@@ -456,6 +632,64 @@ public class LoginCont {
 		}
 		
 		return userInfo;
+	}
+	
+	
+	@ApiOperation(value = "ID 중복 체크"
+			, notes = "ID 중복 체크"
+			)
+	@GetMapping(value = "getDupleCheck.do")
+	public @ResponseBody Map<String, Object> getDupleCheck(
+			HttpServletRequest req,
+			HttpServletResponse res,
+			UserInfoVO userVO
+			) {
+		logger.info("■■■■■■ getDupleCheck / UserInfoVO : {}", userVO.beanToHmap(userVO).toString());
+		Map<String, Object> rslt = new HashMap<String, Object>();
+		
+		try {
+			int cnt = userDAO.getDupleCheck(userVO);
+			
+			String msg = cnt > 0 ? "중복 아이디가 존재합니다." : "사용 가능";
+			
+			rslt.put("cnt", cnt);
+			rslt.put("msg", msg);
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+			res.setStatus(400);
+		}
+		
+		return rslt;
+	}
+	
+	
+	@GetMapping(value = "getUserCodeDupChk.do")
+	public @ResponseBody ResponseVO getUserCodeDupChk(
+			HttpServletRequest req,
+			HttpServletResponse res,
+			@RequestBody UserInfoVO userInfoVO) {
+		
+		logger.info("■■■■■■ getUserCodeDupChk / userInfoVO : {}", userInfoVO.beanToHmap(userInfoVO).toString());
+		ResponseVO rsltVO = new ResponseVO();
+		Map<String, Object> rslt = new HashMap<String, Object>();
+		
+		try {
+			int cnt = userDAO.getUserCodeDupChk(userInfoVO);
+			
+			String msg = cnt > 0 ? "중복 코드가 존재합니다." : "사용가능합니다.";
+			
+			rslt.put("cnt", cnt);
+			rslt.put("msg", msg);
+			
+			rsltVO.setData(rslt);
+		} catch (Exception e) {
+			// TODO: handle exception
+			rsltVO.setStatus(400);
+		}
+		
+		return rsltVO;
 	}
 	
 	
