@@ -32,7 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 
 public class HttpUrlUtil {
-	public static void main(String args[]) {
+	public static void main(String args[]) { 
 
 		String url = "http://192.168.33.181:8090/status";
 //		getJSONFromUrl(url);
